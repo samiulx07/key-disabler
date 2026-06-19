@@ -38,15 +38,14 @@ public sealed class DeviceKeyboardBlockerService : IDisposable
 
         for (var device = InterceptionNative.KeyboardMinDevice; device <= InterceptionNative.KeyboardMaxDevice; device++)
         {
+            var id = BuildDeviceId(device);
             var hardwareId = GetHardwareId(device);
             if (string.IsNullOrWhiteSpace(hardwareId))
             {
                 continue;
             }
 
-            var id = BuildDeviceId(device);
             var displayName = BuildDisplayName(device, hardwareId);
-
             var keyboard = new KeyboardDevice
             {
                 Id = id,
@@ -84,12 +83,15 @@ public sealed class DeviceKeyboardBlockerService : IDisposable
             .Where(rule => rule.IsEnabled)
             .Where(rule => !string.IsNullOrWhiteSpace(rule.DeviceId))
             .Where(rule => rule.ScanCode > 0)
+            .GroupBy(BuildRuleKey, StringComparer.OrdinalIgnoreCase)
+            .Select(group => group.Last())
             .ToDictionary(BuildRuleKey, rule => rule, StringComparer.OrdinalIgnoreCase);
 
         var disabledDevices = disabledKeyboards
             .Where(rule => rule.IsEnabled)
             .Select(rule => rule.DeviceId)
             .Where(deviceId => !string.IsNullOrWhiteSpace(deviceId))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         lock (_syncRoot)
@@ -110,21 +112,39 @@ public sealed class DeviceKeyboardBlockerService : IDisposable
 
     private void WorkerLoop(CancellationToken cancellationToken)
     {
-        while (!cancellationToken.IsCancellationRequested && _context != IntPtr.Zero)
+        try
         {
-            var device = InterceptionNative.interception_wait(_context);
-            if (device < InterceptionNative.KeyboardMinDevice || device > InterceptionNative.KeyboardMaxDevice)
+            while (!cancellationToken.IsCancellationRequested && _context != IntPtr.Zero)
             {
-                continue;
-            }
+                var device = InterceptionNative.interception_wait(_context);
+                if (device < InterceptionNative.KeyboardMinDevice || device > InterceptionNative.KeyboardMaxDevice)
+                {
+                    continue;
+                }
 
-            var stroke = new InterceptionNative.InterceptionKeyStroke();
-            var received = InterceptionNative.interception_receive(_context, device, ref stroke, 1);
-            if (received <= 0)
-            {
-                continue;
+                ProcessDeviceEvent(device);
             }
+        }
+        catch (Exception ex)
+        {
+            LastError = ex.Message;
+            IsAvailable = false;
+        }
+    }
 
+    private void ProcessDeviceEvent(int device)
+    {
+        var stroke = new InterceptionNative.InterceptionKeyStroke();
+        var received = InterceptionNative.interception_receive(_context, device, ref stroke, 1);
+        if (received <= 0)
+        {
+            return;
+        }
+
+        var shouldForward = true;
+
+        try
+        {
             var deviceId = BuildDeviceId(device);
             var hardwareId = GetHardwareId(device);
             var displayName = BuildDisplayName(device, hardwareId);
@@ -133,12 +153,14 @@ public sealed class DeviceKeyboardBlockerService : IDisposable
             var isExtended = (stroke.State & InterceptionNative.KeyStateE0) == InterceptionNative.KeyStateE0;
             var ruleKey = BuildRuleKey(deviceId, stroke.Code, isExtended);
             var keyName = KeyNameResolver.Resolve(stroke.Code, isExtended);
-            var shouldBlock = false;
+            var shouldStop = false;
 
             lock (_syncRoot)
             {
-                shouldBlock = _disabledDeviceIds.Contains(deviceId) || _rulesByDeviceAndKey.ContainsKey(ruleKey);
+                shouldStop = _disabledDeviceIds.Contains(deviceId) || _rulesByDeviceAndKey.ContainsKey(ruleKey);
             }
+
+            shouldForward = !shouldStop;
 
             KeyReceived?.Invoke(
                 this,
@@ -149,9 +171,11 @@ public sealed class DeviceKeyboardBlockerService : IDisposable
                     stroke.Code,
                     isExtended,
                     keyName,
-                    shouldBlock));
-
-            if (!shouldBlock)
+                    shouldStop));
+        }
+        finally
+        {
+            if (shouldForward)
             {
                 InterceptionNative.interception_send(_context, device, ref stroke, 1);
             }
@@ -207,7 +231,7 @@ public sealed class DeviceKeyboardBlockerService : IDisposable
 
         var buffer = new StringBuilder(512);
         var result = InterceptionNative.interception_get_hardware_id(_context, device, buffer, (uint)buffer.Capacity);
-        return result > 0 ? buffer.ToString() : string.Empty;
+        return result > 0 ? buffer.ToString().TrimEnd('\0').Trim() : string.Empty;
     }
 
     private void RememberDevice(string deviceId, string hardwareId, string displayName)
