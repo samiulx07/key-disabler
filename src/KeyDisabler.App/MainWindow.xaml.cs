@@ -15,6 +15,7 @@ public partial class MainWindow : Window
 
     private readonly SettingsService _settingsService = new();
     private readonly RawInputService _rawInputService = new();
+    private readonly KeyboardHookService _keyboardHookService = new();
     private readonly ObservableCollection<KeyboardDevice> _devices = new();
     private readonly ObservableCollection<KeyboardRule> _rules = new();
 
@@ -53,7 +54,8 @@ public partial class MainWindow : Window
 
         RefreshDevices();
         UpdateRuleCount();
-        UpdateStatus("Ready");
+        UpdateKeyboardHook();
+        UpdateStatus(_keyboardHookService.IsRunning ? "Global blocker active" : "Blocker failed to start");
 
         var handle = new WindowInteropHelper(this).Handle;
         _hwndSource = HwndSource.FromHwnd(handle);
@@ -152,8 +154,9 @@ public partial class MainWindow : Window
 
         _rules.Add(rule);
         SaveSettingsFromUi();
+        UpdateKeyboardHook();
         UpdateRuleCount();
-        UpdateStatus("Rule saved");
+        UpdateStatus("Rule saved and active");
     }
 
     private void RemoveRule_Click(object sender, RoutedEventArgs e)
@@ -166,6 +169,7 @@ public partial class MainWindow : Window
 
         _rules.Remove(rule);
         SaveSettingsFromUi();
+        UpdateKeyboardHook();
         UpdateRuleCount();
         UpdateStatus("Rule removed");
     }
@@ -192,6 +196,7 @@ public partial class MainWindow : Window
         if (_allowClose)
         {
             _hwndSource?.RemoveHook(WndProc);
+            _keyboardHookService.Dispose();
             _trayIconService?.Dispose();
             return;
         }
@@ -200,12 +205,13 @@ public partial class MainWindow : Window
         {
             e.Cancel = true;
             Hide();
-            _trayIconService?.ShowBalloon("Key Disabler is still running", "Double-click the tray icon to open it again.");
+            _trayIconService?.ShowBalloon("Key Disabler is still running", "Saved rules stay active while the tray app is running.");
         }
         else
         {
             _allowClose = true;
             _hwndSource?.RemoveHook(WndProc);
+            _keyboardHookService.Dispose();
             _trayIconService?.Dispose();
             System.Windows.Application.Current.Shutdown();
         }
@@ -240,6 +246,12 @@ public partial class MainWindow : Window
         _settings.MinimizeToTray = MinimizeToTrayCheck.IsChecked == true;
         _settings.Rules = _rules.ToList();
         _settingsService.Save(_settings);
+    }
+
+    private void UpdateKeyboardHook()
+    {
+        _keyboardHookService.UpdateRules(_rules);
+        _keyboardHookService.Start();
     }
 
     private void ApplyStartupSetting(bool enabled)
