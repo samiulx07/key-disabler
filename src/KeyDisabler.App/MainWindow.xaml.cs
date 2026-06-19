@@ -90,22 +90,22 @@ public partial class MainWindow : Window
     {
         Dispatcher.Invoke(() =>
         {
-            LastKeyText.Text = $"{e.KeyName} from {e.DeviceName}";
+            var device = EnsureDeviceFromEvent(e);
+
+            LastKeyText.Text = $"{e.KeyName} from {device.DisplayName}";
             FooterText.Text = e.WasBlocked
-                ? $"Blocked: {e.KeyName} from {e.DeviceName}"
-                : $"Allowed: {e.KeyName} from {e.DeviceName}";
+                ? $"Blocked: {e.KeyName} from {device.DisplayName}"
+                : $"Allowed: {e.KeyName} from {device.DisplayName}";
 
             if (_isDetectingDevice)
             {
-                var device = _devices.FirstOrDefault(item => string.Equals(item.Id, e.DeviceId, StringComparison.OrdinalIgnoreCase));
-                if (device is not null)
-                {
-                    KeyboardList.SelectedItem = device;
-                    RuleDeviceCombo.SelectedItem = device;
-                    _isDetectingDevice = false;
-                    UpdateStatus("Keyboard detected");
-                    _trayIconService?.ShowBalloon("Keyboard detected", device.DisplayName);
-                }
+                KeyboardList.SelectedItem = device;
+                RuleDeviceCombo.SelectedItem = device;
+                _isDetectingDevice = false;
+                RebindSavedRulesToCurrentDevices(saveAfterRebind: true);
+                UpdateDeviceBlocker();
+                UpdateStatus("Keyboard detected and selected");
+                _trayIconService?.ShowBalloon("Keyboard detected", device.DisplayName);
             }
         });
     }
@@ -146,7 +146,7 @@ public partial class MainWindow : Window
     {
         _isDetectingDevice = true;
         UpdateStatus("Press a key on the target keyboard");
-        FooterText.Text = "Detection mode is active. Press any key from the exact keyboard you want to use for this rule.";
+        FooterText.Text = "Detection mode is active. Press any key from the exact keyboard you want to control.";
     }
 
     private void KeyboardList_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
@@ -173,15 +173,15 @@ public partial class MainWindow : Window
             return;
         }
 
-        if (IsKeyboardDisabled(device.Id))
+        if (IsKeyboardDisabled(device))
         {
             UpdateStatus("This keyboard is already disabled");
             return;
         }
 
         var otherEnabledKeyboardExists = _devices
-            .Where(item => !string.Equals(item.Id, device.Id, StringComparison.OrdinalIgnoreCase))
-            .Any(item => !IsKeyboardDisabled(item.Id));
+            .Where(item => !IsSameKeyboard(item, device))
+            .Any(item => !IsKeyboardDisabled(item));
 
         if (!otherEnabledKeyboardExists)
         {
@@ -192,6 +192,7 @@ public partial class MainWindow : Window
         _disabledKeyboards.Add(new DisabledKeyboardRule
         {
             DeviceId = device.Id,
+            HardwareId = NormalizeHardwareId(device.DevicePath),
             DeviceName = device.DisplayName,
             IsEnabled = true
         });
@@ -209,7 +210,7 @@ public partial class MainWindow : Window
 
         if (KeyboardList.SelectedItem is KeyboardDevice device)
         {
-            disabledRule = _disabledKeyboards.FirstOrDefault(rule => string.Equals(rule.DeviceId, device.Id, StringComparison.OrdinalIgnoreCase));
+            disabledRule = _disabledKeyboards.FirstOrDefault(rule => IsSameKeyboard(rule, device));
         }
 
         disabledRule ??= DisabledKeyboardsList.SelectedItem as DisabledKeyboardRule;
@@ -242,8 +243,9 @@ public partial class MainWindow : Window
             return;
         }
 
+        var deviceHardwareId = NormalizeHardwareId(device.DevicePath);
         var exists = _rules.Any(rule =>
-            string.Equals(rule.DeviceId, device.Id, StringComparison.OrdinalIgnoreCase) &&
+            IsSameKeyboard(rule, device) &&
             rule.ScanCode == key.ScanCode &&
             rule.IsExtendedKey == key.IsExtendedKey);
 
@@ -256,6 +258,7 @@ public partial class MainWindow : Window
         var rule = new KeyboardRule
         {
             DeviceId = device.Id,
+            DeviceHardwareId = deviceHardwareId,
             DeviceName = device.DisplayName,
             VirtualKey = key.VirtualKey,
             ScanCode = key.ScanCode,
@@ -322,7 +325,7 @@ public partial class MainWindow : Window
         {
             e.Cancel = true;
             Hide();
-            _trayIconService?.ShowBalloon("Key Disabler is still running", "Saved keyboard disables and key rules stay active while the tray app is running.");
+            _trayIconService?.ShowBalloon("Key Disabler is still running", "Saved rules stay active while the tray app is running.");
         }
         else
         {
@@ -336,6 +339,7 @@ public partial class MainWindow : Window
 
     private void RefreshDevices()
     {
+        var selectedHardwareId = (KeyboardList.SelectedItem as KeyboardDevice)?.DevicePath;
         var selectedId = (KeyboardList.SelectedItem as KeyboardDevice)?.Id;
         _devices.Clear();
 
@@ -350,7 +354,14 @@ public partial class MainWindow : Window
             _devices.Add(device);
         }
 
-        if (!string.IsNullOrWhiteSpace(selectedId))
+        RebindSavedRulesToCurrentDevices(saveAfterRebind: true);
+
+        if (!string.IsNullOrWhiteSpace(selectedHardwareId))
+        {
+            KeyboardList.SelectedItem = _devices.FirstOrDefault(device => SameHardwareId(device.DevicePath, selectedHardwareId));
+        }
+
+        if (KeyboardList.SelectedItem is null && !string.IsNullOrWhiteSpace(selectedId))
         {
             KeyboardList.SelectedItem = _devices.FirstOrDefault(device => string.Equals(device.Id, selectedId, StringComparison.OrdinalIgnoreCase));
         }
@@ -360,7 +371,113 @@ public partial class MainWindow : Window
             KeyboardList.SelectedIndex = 0;
         }
 
+        UpdateSelectedDeviceStatus();
         FooterText.Text = $"Detected {_devices.Count} keyboard device(s).";
+    }
+
+    private KeyboardDevice EnsureDeviceFromEvent(DeviceKeyEventArgs e)
+    {
+        var device = _devices.FirstOrDefault(item => string.Equals(item.Id, e.DeviceId, StringComparison.OrdinalIgnoreCase));
+        if (device is not null)
+        {
+            return device;
+        }
+
+        device = new KeyboardDevice
+        {
+            Id = e.DeviceId,
+            DevicePath = e.DeviceHardwareId,
+            DisplayName = string.IsNullOrWhiteSpace(e.DeviceName) ? e.DeviceId : e.DeviceName,
+            DeviceType = "Interception Keyboard"
+        };
+
+        _devices.Add(device);
+        return device;
+    }
+
+    private void RebindSavedRulesToCurrentDevices(bool saveAfterRebind)
+    {
+        var changed = false;
+
+        foreach (var rule in _rules)
+        {
+            var matchedDevice = FindDeviceForSavedRule(rule.DeviceHardwareId, rule.DeviceId);
+            if (matchedDevice is null)
+            {
+                continue;
+            }
+
+            var hardwareId = NormalizeHardwareId(matchedDevice.DevicePath);
+            if (!string.Equals(rule.DeviceId, matchedDevice.Id, StringComparison.OrdinalIgnoreCase))
+            {
+                rule.DeviceId = matchedDevice.Id;
+                changed = true;
+            }
+
+            if (!string.Equals(rule.DeviceHardwareId, hardwareId, StringComparison.OrdinalIgnoreCase))
+            {
+                rule.DeviceHardwareId = hardwareId;
+                changed = true;
+            }
+
+            if (!string.Equals(rule.DeviceName, matchedDevice.DisplayName, StringComparison.Ordinal))
+            {
+                rule.DeviceName = matchedDevice.DisplayName;
+                changed = true;
+            }
+        }
+
+        foreach (var rule in _disabledKeyboards)
+        {
+            var matchedDevice = FindDeviceForSavedRule(rule.HardwareId, rule.DeviceId);
+            if (matchedDevice is null)
+            {
+                continue;
+            }
+
+            var hardwareId = NormalizeHardwareId(matchedDevice.DevicePath);
+            if (!string.Equals(rule.DeviceId, matchedDevice.Id, StringComparison.OrdinalIgnoreCase))
+            {
+                rule.DeviceId = matchedDevice.Id;
+                changed = true;
+            }
+
+            if (!string.Equals(rule.HardwareId, hardwareId, StringComparison.OrdinalIgnoreCase))
+            {
+                rule.HardwareId = hardwareId;
+                changed = true;
+            }
+
+            if (!string.Equals(rule.DeviceName, matchedDevice.DisplayName, StringComparison.Ordinal))
+            {
+                rule.DeviceName = matchedDevice.DisplayName;
+                changed = true;
+            }
+        }
+
+        if (changed && saveAfterRebind)
+        {
+            SaveSettingsFromUi();
+        }
+    }
+
+    private KeyboardDevice? FindDeviceForSavedRule(string hardwareId, string fallbackDeviceId)
+    {
+        if (!string.IsNullOrWhiteSpace(hardwareId))
+        {
+            var byHardware = _devices.FirstOrDefault(device => SameHardwareId(device.DevicePath, hardwareId));
+            if (byHardware is not null)
+            {
+                return byHardware;
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(fallbackDeviceId))
+        {
+            return _devices.FirstOrDefault(device => string.Equals(device.Id, fallbackDeviceId, StringComparison.OrdinalIgnoreCase));
+        }
+
+        return null;
     }
 
     private void SaveSettingsFromUi()
@@ -374,6 +491,7 @@ public partial class MainWindow : Window
 
     private void UpdateDeviceBlocker()
     {
+        RebindSavedRulesToCurrentDevices(saveAfterRebind: false);
         _deviceBlockerService.UpdateRules(_rules, _disabledKeyboards);
         _deviceBlockerService.Start();
     }
@@ -422,16 +540,48 @@ public partial class MainWindow : Window
             return;
         }
 
-        SelectedDeviceStatusText.Text = IsKeyboardDisabled(device.Id)
+        SelectedDeviceStatusText.Text = IsKeyboardDisabled(device)
             ? "Status: disabled"
             : "Status: enabled";
     }
 
-    private bool IsKeyboardDisabled(string deviceId)
+    private bool IsKeyboardDisabled(KeyboardDevice device)
     {
-        return _disabledKeyboards.Any(rule =>
-            rule.IsEnabled &&
-            string.Equals(rule.DeviceId, deviceId, StringComparison.OrdinalIgnoreCase));
+        return _disabledKeyboards.Any(rule => rule.IsEnabled && IsSameKeyboard(rule, device));
+    }
+
+    private static bool IsSameKeyboard(KeyboardRule rule, KeyboardDevice device)
+    {
+        return SameHardwareId(rule.DeviceHardwareId, device.DevicePath) ||
+               string.Equals(rule.DeviceId, device.Id, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsSameKeyboard(DisabledKeyboardRule rule, KeyboardDevice device)
+    {
+        return SameHardwareId(rule.HardwareId, device.DevicePath) ||
+               string.Equals(rule.DeviceId, device.Id, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsSameKeyboard(KeyboardDevice left, KeyboardDevice right)
+    {
+        return SameHardwareId(left.DevicePath, right.DevicePath) ||
+               string.Equals(left.Id, right.Id, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool SameHardwareId(string left, string right)
+    {
+        var normalizedLeft = NormalizeHardwareId(left);
+        var normalizedRight = NormalizeHardwareId(right);
+        return !string.IsNullOrWhiteSpace(normalizedLeft) &&
+               !string.IsNullOrWhiteSpace(normalizedRight) &&
+               string.Equals(normalizedLeft, normalizedRight, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string NormalizeHardwareId(string value)
+    {
+        return string.IsNullOrWhiteSpace(value)
+            ? string.Empty
+            : value.Trim().ToUpperInvariant();
     }
 
     private void UpdateStatus(string message)
