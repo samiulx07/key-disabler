@@ -19,11 +19,13 @@ public partial class MainWindow : Window
     private readonly ObservableCollection<KeyboardDevice> _devices = new();
     private readonly ObservableCollection<KeyboardRule> _rules = new();
     private readonly ObservableCollection<DisabledKeyboardRule> _disabledKeyboards = new();
+    private readonly ObservableCollection<KeyOption> _keyOptions = new();
 
     private AppSettings _settings = new();
     private TrayIconService? _trayIconService;
     private HwndSource? _hwndSource;
     private bool _isDetectingDevice;
+    private bool _isCapturingRuleKey;
     private bool _isLoading;
     private bool _allowClose;
 
@@ -43,6 +45,7 @@ public partial class MainWindow : Window
         {
             EnsureRuleCompatibility(rule);
             _rules.Add(rule);
+            AddKeyOptionIfMissing(new KeyOption(rule.KeyName, rule.VirtualKey, rule.ScanCode, rule.IsExtendedKey));
         }
 
         foreach (var disabledKeyboard in _settings.DisabledKeyboards ?? new List<DisabledKeyboardRule>())
@@ -50,12 +53,17 @@ public partial class MainWindow : Window
             _disabledKeyboards.Add(disabledKeyboard);
         }
 
+        foreach (var option in BuildKeyOptions())
+        {
+            AddKeyOptionIfMissing(option);
+        }
+
         KeyboardList.ItemsSource = _devices;
         RuleDeviceCombo.ItemsSource = _devices;
         RulesList.ItemsSource = _rules;
         DisabledKeyboardsList.ItemsSource = _disabledKeyboards;
-        KeyCombo.ItemsSource = BuildKeyOptions();
-        KeyCombo.SelectedIndex = 0;
+        KeyCombo.ItemsSource = _keyOptions;
+        KeyCombo.SelectedIndex = _keyOptions.Count > 0 ? 0 : -1;
 
         StartWithWindowsCheck.IsChecked = _settings.StartWithWindows;
         MinimizeToTrayCheck.IsChecked = _settings.MinimizeToTray;
@@ -96,6 +104,12 @@ public partial class MainWindow : Window
             FooterText.Text = e.WasBlocked
                 ? $"Blocked: {e.KeyName} from {device.DisplayName}"
                 : $"Allowed: {e.KeyName} from {device.DisplayName}";
+
+            if (_isCapturingRuleKey)
+            {
+                CaptureKeyFromEvent(device, e);
+                return;
+            }
 
             if (_isDetectingDevice)
             {
@@ -145,8 +159,23 @@ public partial class MainWindow : Window
     private void DetectDevice_Click(object sender, RoutedEventArgs e)
     {
         _isDetectingDevice = true;
+        _isCapturingRuleKey = false;
         UpdateStatus("Press a key on the target keyboard");
         FooterText.Text = "Detection mode is active. Press any key from the exact keyboard you want to control.";
+    }
+
+    private void CaptureRuleKey_Click(object sender, RoutedEventArgs e)
+    {
+        if (RuleDeviceCombo.SelectedItem is not KeyboardDevice)
+        {
+            UpdateStatus("Select or detect a keyboard first");
+            return;
+        }
+
+        _isCapturingRuleKey = true;
+        _isDetectingDevice = false;
+        CapturedKeyText.Text = "Capture mode active: press the exact key/button from the selected keyboard.";
+        UpdateStatus("Press the exact key to capture");
     }
 
     private void KeyboardList_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
@@ -239,7 +268,7 @@ public partial class MainWindow : Window
 
         if (KeyCombo.SelectedItem is not KeyOption key)
         {
-            UpdateStatus("Select a key first");
+            UpdateStatus("Capture or select a key first");
             return;
         }
 
@@ -393,6 +422,28 @@ public partial class MainWindow : Window
 
         _devices.Add(device);
         return device;
+    }
+
+    private void CaptureKeyFromEvent(KeyboardDevice eventDevice, DeviceKeyEventArgs e)
+    {
+        if (RuleDeviceCombo.SelectedItem is KeyboardDevice selectedDevice && !IsSameKeyboard(selectedDevice, eventDevice))
+        {
+            CapturedKeyText.Text = $"Ignored {e.KeyName}: it came from {eventDevice.DisplayName}, not the selected keyboard.";
+            UpdateStatus("Pressed key came from a different keyboard");
+            return;
+        }
+
+        var keyName = string.IsNullOrWhiteSpace(e.KeyName)
+            ? $"Scan {e.ScanCode}"
+            : e.KeyName;
+
+        var option = AddKeyOptionIfMissing(new KeyOption(keyName, 0, e.ScanCode, e.IsExtendedKey));
+        KeyCombo.SelectedItem = option;
+        RuleDeviceCombo.SelectedItem = eventDevice;
+        _isCapturingRuleKey = false;
+
+        CapturedKeyText.Text = $"Captured: {option.Name} from {eventDevice.DisplayName}";
+        UpdateStatus("Key captured. Now click Add Key Rule.");
     }
 
     private void RebindSavedRulesToCurrentDevices(bool saveAfterRebind)
@@ -582,6 +633,21 @@ public partial class MainWindow : Window
         return string.IsNullOrWhiteSpace(value)
             ? string.Empty
             : value.Trim().ToUpperInvariant();
+    }
+
+    private KeyOption AddKeyOptionIfMissing(KeyOption option)
+    {
+        var existing = _keyOptions.FirstOrDefault(item =>
+            item.ScanCode == option.ScanCode &&
+            item.IsExtendedKey == option.IsExtendedKey);
+
+        if (existing is not null)
+        {
+            return existing;
+        }
+
+        _keyOptions.Add(option);
+        return option;
     }
 
     private void UpdateStatus(string message)
