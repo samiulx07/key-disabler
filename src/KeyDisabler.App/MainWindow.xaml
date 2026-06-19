@@ -2,10 +2,10 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Key Disabler"
-        Width="980"
-        Height="680"
-        MinWidth="840"
-        MinHeight="560"
+        Width="1040"
+        Height="720"
+        MinWidth="900"
+        MinHeight="600"
         Background="#F3F4F6"
         Loaded="Window_Loaded"
         Closing="Window_Closing">
@@ -25,7 +25,7 @@
 
                 <StackPanel>
                     <TextBlock Text="Key Disabler" FontSize="30" FontWeight="Bold" Foreground="#111827" />
-                    <TextBlock Text="Standalone Windows utility for keyboard detection, saved rules, and future per-device key enforcement."
+                    <TextBlock Text="Disable a full selected keyboard, or disable selected keys only on a selected keyboard."
                                Foreground="#6B7280"
                                Margin="0,6,0,0" />
                 </StackPanel>
@@ -47,7 +47,7 @@
                     <Border Background="White" CornerRadius="18" Padding="22" Margin="0,0,12,0">
                         <StackPanel>
                             <TextBlock Text="Current keyboard event" FontSize="20" FontWeight="SemiBold" Foreground="#111827" />
-                            <TextBlock Text="Press any key from your laptop keyboard or external keyboard. The app will show which device produced it."
+                            <TextBlock Text="Press any key from your laptop keyboard or external keyboard. The app will show which device produced it and whether it was blocked."
                                        TextWrapping="Wrap"
                                        Foreground="#6B7280"
                                        Margin="0,8,0,16" />
@@ -59,28 +59,29 @@
                                 </StackPanel>
                             </Border>
 
-                            <TextBlock Text="Note: this version saves rules and detects per-device input. The driver/service layer will be added next for actual system-wide enforcement."
+                            <TextBlock Text="Full keyboard disable rules and key rules are stored locally and restored after restart. Start with Windows keeps the blocker active after login."
                                        TextWrapping="Wrap"
-                                       Foreground="#92400E"
+                                       Foreground="#065F46"
                                        Margin="0,18,0,0" />
                         </StackPanel>
                     </Border>
 
                     <Border Grid.Column="1" Background="White" CornerRadius="18" Padding="22" Margin="12,0,0,0">
                         <StackPanel>
-                            <TextBlock Text="Saved rules" FontSize="20" FontWeight="SemiBold" Foreground="#111827" />
-                            <TextBlock x:Name="RuleCountText" Text="0 rules saved" Foreground="#6B7280" Margin="0,8,0,16" />
-                            <Button Content="Open Rules Tab" Click="OpenRulesTab_Click" />
+                            <TextBlock Text="Saved protection" FontSize="20" FontWeight="SemiBold" Foreground="#111827" />
+                            <TextBlock x:Name="RuleCountText" Text="0 key rules, 0 disabled keyboards" Foreground="#6B7280" Margin="0,8,0,16" />
+                            <Button Content="Open Rules Tab" Click="OpenRulesTab_Click" Margin="0,0,0,8" />
+                            <Button Content="Open Keyboards Tab" Click="OpenKeyboardsTab_Click" />
                         </StackPanel>
                     </Border>
                 </Grid>
             </TabItem>
 
-            <TabItem Header="Keyboards">
+            <TabItem Header="Keyboards" x:Name="KeyboardsTab">
                 <Grid Margin="0,12,0,0">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="1*" />
-                        <ColumnDefinition Width="1*" />
+                        <ColumnDefinition Width="1.1*" />
                     </Grid.ColumnDefinitions>
 
                     <Border Background="White" CornerRadius="18" Padding="22" Margin="0,0,12,0">
@@ -93,7 +94,7 @@
                                            Margin="0,8,0,12" />
 
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
-                                    <Button Content="Refresh" Click="RefreshDevices_Click" />
+                                    <Button Content="Refresh" Click="RefreshDevices_Click" Margin="0,0,8,0" />
                                     <Button Content="Detect by key press" Click="DetectDevice_Click" />
                                 </StackPanel>
                             </StackPanel>
@@ -103,13 +104,47 @@
                     </Border>
 
                     <Border Grid.Column="1" Background="White" CornerRadius="18" Padding="22" Margin="12,0,0,0">
-                        <StackPanel>
-                            <TextBlock Text="Selected keyboard" FontSize="20" FontWeight="SemiBold" Foreground="#111827" />
-                            <TextBlock x:Name="SelectedDeviceText" Text="No keyboard selected" TextWrapping="Wrap" Foreground="#6B7280" Margin="0,8,0,18" />
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
 
-                            <TextBlock Text="Device path" FontWeight="SemiBold" Foreground="#374151" />
-                            <TextBox x:Name="DevicePathText" IsReadOnly="True" TextWrapping="Wrap" />
-                        </StackPanel>
+                            <StackPanel Grid.Row="0">
+                                <TextBlock Text="Selected keyboard" FontSize="20" FontWeight="SemiBold" Foreground="#111827" />
+                                <TextBlock x:Name="SelectedDeviceText" Text="No keyboard selected" TextWrapping="Wrap" Foreground="#6B7280" Margin="0,8,0,10" />
+
+                                <TextBlock Text="Keyboard status" FontWeight="SemiBold" Foreground="#374151" />
+                                <TextBlock x:Name="SelectedDeviceStatusText" Text="Status: not selected" Foreground="#6B7280" Margin="0,4,0,12" />
+
+                                <TextBlock Text="Device path" FontWeight="SemiBold" Foreground="#374151" />
+                                <TextBox x:Name="DevicePathText" IsReadOnly="True" TextWrapping="Wrap" Margin="0,4,0,12" />
+
+                                <StackPanel Orientation="Horizontal" Margin="0,4,0,18">
+                                    <Button Content="Disable Selected Keyboard" Click="DisableSelectedKeyboard_Click" Margin="0,0,8,0" />
+                                    <Button Content="Enable Selected Keyboard" Click="EnableSelectedKeyboard_Click" />
+                                </StackPanel>
+                            </StackPanel>
+
+                            <Border Grid.Row="1" Background="#FEF2F2" BorderBrush="#FECACA" BorderThickness="1" CornerRadius="12" Padding="12" Margin="0,0,0,14">
+                                <TextBlock Text="Safety: the app will not let you disable every detected keyboard. Keep at least one working keyboard enabled."
+                                           Foreground="#991B1B"
+                                           TextWrapping="Wrap" />
+                            </Border>
+
+                            <DockPanel Grid.Row="2">
+                                <TextBlock DockPanel.Dock="Top" Text="Fully disabled keyboards" FontSize="18" FontWeight="SemiBold" Foreground="#111827" Margin="0,0,0,10" />
+                                <ListView x:Name="DisabledKeyboardsList">
+                                    <ListView.View>
+                                        <GridView>
+                                            <GridViewColumn Header="Keyboard" DisplayMemberBinding="{Binding DeviceName}" Width="260" />
+                                            <GridViewColumn Header="Enabled" DisplayMemberBinding="{Binding IsEnabled}" Width="80" />
+                                        </GridView>
+                                    </ListView.View>
+                                </ListView>
+                            </DockPanel>
+                        </Grid>
                     </Border>
                 </Grid>
             </TabItem>
@@ -123,8 +158,8 @@
 
                     <Border Background="White" CornerRadius="18" Padding="22" Margin="0,0,12,0">
                         <StackPanel>
-                            <TextBlock Text="Create rule" FontSize="20" FontWeight="SemiBold" Foreground="#111827" />
-                            <TextBlock Text="Choose a keyboard and a key. Settings are saved locally and restored after restart."
+                            <TextBlock Text="Create key rule" FontSize="20" FontWeight="SemiBold" Foreground="#111827" />
+                            <TextBlock Text="Choose a keyboard and a key. Only that key on that selected physical keyboard will be blocked."
                                        TextWrapping="Wrap"
                                        Foreground="#6B7280"
                                        Margin="0,8,0,16" />
@@ -132,11 +167,11 @@
                             <TextBlock Text="Keyboard" FontWeight="SemiBold" Foreground="#374151" />
                             <ComboBox x:Name="RuleDeviceCombo" DisplayMemberPath="DisplayName" />
 
-                            <TextBlock Text="Key" FontWeight="SemiBold" Foreground="#374151" />
+                            <TextBlock Text="Key" FontWeight="SemiBold" Foreground="#374151" Margin="0,10,0,0" />
                             <ComboBox x:Name="KeyCombo" DisplayMemberPath="Name" />
 
-                            <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                                <Button Content="Add Rule" Click="AddRule_Click" />
+                            <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                                <Button Content="Add Key Rule" Click="AddRule_Click" Margin="0,0,8,0" />
                                 <Button Content="Remove Selected" Click="RemoveRule_Click" />
                             </StackPanel>
                         </StackPanel>
@@ -144,7 +179,7 @@
 
                     <Border Grid.Column="1" Background="White" CornerRadius="18" Padding="22" Margin="12,0,0,0">
                         <DockPanel>
-                            <TextBlock DockPanel.Dock="Top" Text="Saved rules" FontSize="20" FontWeight="SemiBold" Foreground="#111827" Margin="0,0,0,14" />
+                            <TextBlock DockPanel.Dock="Top" Text="Saved key rules" FontSize="20" FontWeight="SemiBold" Foreground="#111827" Margin="0,0,0,14" />
 
                             <ListView x:Name="RulesList">
                                 <ListView.View>
@@ -164,8 +199,9 @@
                 <Border Background="White" CornerRadius="18" Padding="22" Margin="0,12,0,0">
                     <StackPanel>
                         <TextBlock Text="Application settings" FontSize="20" FontWeight="SemiBold" Foreground="#111827" />
-                        <TextBlock Text="These settings are stored in your Windows AppData folder."
+                        <TextBlock Text="These settings are stored in your Windows AppData folder. Enable Start with Windows so saved disables are restored after every restart/login."
                                    Foreground="#6B7280"
+                                   TextWrapping="Wrap"
                                    Margin="0,8,0,16" />
 
                         <CheckBox x:Name="StartWithWindowsCheck" Content="Start with Windows" Checked="SettingsCheck_Changed" Unchecked="SettingsCheck_Changed" Margin="0,0,0,10" />
