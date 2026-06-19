@@ -25,7 +25,7 @@
 
                 <StackPanel>
                     <TextBlock Text="Key Disabler" FontSize="30" FontWeight="Bold" Foreground="#111827" />
-                    <TextBlock Text="Disable a full selected keyboard, or disable selected keys only on a selected keyboard."
+                    <TextBlock Text="Disable a full selected keyboard, or disable captured keys only on a selected keyboard. Mouse devices are never rule targets."
                                Foreground="#6B7280"
                                Margin="0,6,0,0" />
                 </StackPanel>
@@ -47,7 +47,7 @@
                     <Border Background="White" CornerRadius="18" Padding="22" Margin="0,0,12,0">
                         <StackPanel>
                             <TextBlock Text="Current keyboard event" FontSize="20" FontWeight="SemiBold" Foreground="#111827" />
-                            <TextBlock Text="Press any key from your laptop keyboard or external keyboard. The app will show which device produced it and whether it was blocked."
+                            <TextBlock Text="Press any key from your laptop keyboard or external keyboard. The app will show which keyboard produced it and whether it was blocked."
                                        TextWrapping="Wrap"
                                        Foreground="#6B7280"
                                        Margin="0,8,0,16" />
@@ -59,7 +59,7 @@
                                 </StackPanel>
                             </Border>
 
-                            <TextBlock Text="Full keyboard disable rules and key rules are stored locally and restored after restart. Start with Windows keeps the blocker active after login."
+                            <TextBlock Text="Use Capture Key to block any keyboard button, not only Space or Enter. Saved rules are restored only when the app is running."
                                        TextWrapping="Wrap"
                                        Foreground="#065F46"
                                        Margin="0,18,0,0" />
@@ -128,7 +128,7 @@
                             </StackPanel>
 
                             <Border Grid.Row="1" Background="#FEF2F2" BorderBrush="#FECACA" BorderThickness="1" CornerRadius="12" Padding="12" Margin="0,0,0,14">
-                                <TextBlock Text="Safety: the app will not let you disable every detected keyboard. Keep at least one working keyboard enabled."
+                                <TextBlock Text="Safety: mouse devices are not selectable. The app also blocks disabling the last enabled detected keyboard."
                                            Foreground="#991B1B"
                                            TextWrapping="Wrap" />
                             </Border>
@@ -159,7 +159,7 @@
                     <Border Background="White" CornerRadius="18" Padding="22" Margin="0,0,12,0">
                         <StackPanel>
                             <TextBlock Text="Create key rule" FontSize="20" FontWeight="SemiBold" Foreground="#111827" />
-                            <TextBlock Text="Choose a keyboard and a key. Only that key on that selected physical keyboard will be blocked."
+                            <TextBlock Text="Choose a keyboard, then capture any key/button from that keyboard. Only that captured key on that selected physical keyboard will be blocked."
                                        TextWrapping="Wrap"
                                        Foreground="#6B7280"
                                        Margin="0,8,0,16" />
@@ -169,8 +169,10 @@
 
                             <TextBlock Text="Key" FontWeight="SemiBold" Foreground="#374151" Margin="0,10,0,0" />
                             <ComboBox x:Name="KeyCombo" DisplayMemberPath="Name" />
+                            <TextBlock x:Name="CapturedKeyText" Text="No captured key yet" Foreground="#6B7280" Margin="0,6,0,0" TextWrapping="Wrap" />
 
                             <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                                <Button Content="Capture Key" Click="CaptureRuleKey_Click" Margin="0,0,8,0" />
                                 <Button Content="Add Key Rule" Click="AddRule_Click" Margin="0,0,8,0" />
                                 <Button Content="Remove Selected" Click="RemoveRule_Click" />
                             </StackPanel>
@@ -199,7 +201,7 @@
                 <Border Background="White" CornerRadius="18" Padding="22" Margin="0,12,0,0">
                     <StackPanel>
                         <TextBlock Text="Application settings" FontSize="20" FontWeight="SemiBold" Foreground="#111827" />
-                        <TextBlock Text="These settings are stored in your Windows AppData folder. Enable Start with Windows so saved disables are restored after every restart/login."
+                        <TextBlock Text="These settings are stored in your Windows AppData folder. Enable Start with Windows only after confirming your rules work safely."
                                    Foreground="#6B7280"
                                    TextWrapping="Wrap"
                                    Margin="0,8,0,16" />
