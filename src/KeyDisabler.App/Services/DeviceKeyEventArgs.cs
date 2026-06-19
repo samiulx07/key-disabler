@@ -2,9 +2,10 @@ namespace KeyDisabler.App.Services;
 
 public sealed class DeviceKeyEventArgs : EventArgs
 {
-    public DeviceKeyEventArgs(string deviceId, string deviceName, ushort scanCode, bool isExtendedKey, string keyName, bool wasBlocked)
+    public DeviceKeyEventArgs(string deviceId, string deviceHardwareId, string deviceName, ushort scanCode, bool isExtendedKey, string keyName, bool wasBlocked)
     {
         DeviceId = deviceId;
+        DeviceHardwareId = deviceHardwareId;
         DeviceName = deviceName;
         ScanCode = scanCode;
         IsExtendedKey = isExtendedKey;
@@ -13,6 +14,7 @@ public sealed class DeviceKeyEventArgs : EventArgs
     }
 
     public string DeviceId { get; }
+    public string DeviceHardwareId { get; }
     public string DeviceName { get; }
     public ushort ScanCode { get; }
     public bool IsExtendedKey { get; }
