@@ -38,7 +38,7 @@ jobs:
           $installer = Get-ChildItem -Path "interception" -Recurse -Filter "install-interception.exe" | Select-Object -First 1
           if (-not $installer) { throw "install-interception.exe not found" }
           New-Item -ItemType Directory -Force -Path "publish\driver" | Out-Null
-          Copy-Item $installer.FullName "publish\driver\install-interception.exe" -Force
+          Copy-Item -Path "$($installer.Directory.FullName)\*" -Destination "publish\driver" -Recurse -Force
 
       - name: Install Inno Setup
         run: choco install innosetup --no-progress -y
