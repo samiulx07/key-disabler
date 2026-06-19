@@ -38,8 +38,13 @@ public sealed class DeviceKeyboardBlockerService : IDisposable
 
         for (var device = InterceptionNative.KeyboardMinDevice; device <= InterceptionNative.KeyboardMaxDevice; device++)
         {
-            var id = BuildDeviceId(device);
             var hardwareId = GetHardwareId(device);
+            if (string.IsNullOrWhiteSpace(hardwareId))
+            {
+                continue;
+            }
+
+            var id = BuildDeviceId(device);
             var displayName = BuildDisplayName(device, hardwareId);
 
             var keyboard = new KeyboardDevice
@@ -121,6 +126,10 @@ public sealed class DeviceKeyboardBlockerService : IDisposable
             }
 
             var deviceId = BuildDeviceId(device);
+            var hardwareId = GetHardwareId(device);
+            var displayName = BuildDisplayName(device, hardwareId);
+            RememberDevice(deviceId, hardwareId, displayName);
+
             var isExtended = (stroke.State & InterceptionNative.KeyStateE0) == InterceptionNative.KeyStateE0;
             var ruleKey = BuildRuleKey(deviceId, stroke.Code, isExtended);
             var keyName = KeyNameResolver.Resolve(stroke.Code, isExtended);
@@ -135,6 +144,7 @@ public sealed class DeviceKeyboardBlockerService : IDisposable
                 this,
                 new DeviceKeyEventArgs(
                     deviceId,
+                    hardwareId,
                     ResolveDeviceName(deviceId),
                     stroke.Code,
                     isExtended,
@@ -198,6 +208,22 @@ public sealed class DeviceKeyboardBlockerService : IDisposable
         var buffer = new StringBuilder(512);
         var result = InterceptionNative.interception_get_hardware_id(_context, device, buffer, (uint)buffer.Capacity);
         return result > 0 ? buffer.ToString() : string.Empty;
+    }
+
+    private void RememberDevice(string deviceId, string hardwareId, string displayName)
+    {
+        if (string.IsNullOrWhiteSpace(hardwareId))
+        {
+            return;
+        }
+
+        _deviceCache[deviceId] = new KeyboardDevice
+        {
+            Id = deviceId,
+            DevicePath = hardwareId,
+            DisplayName = displayName,
+            DeviceType = "Interception Keyboard"
+        };
     }
 
     private string ResolveDeviceName(string deviceId)
