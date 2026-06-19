@@ -18,6 +18,7 @@ public partial class MainWindow : Window
     private readonly DeviceKeyboardBlockerService _deviceBlockerService = new();
     private readonly ObservableCollection<KeyboardDevice> _devices = new();
     private readonly ObservableCollection<KeyboardRule> _rules = new();
+    private readonly ObservableCollection<DisabledKeyboardRule> _disabledKeyboards = new();
 
     private AppSettings _settings = new();
     private TrayIconService? _trayIconService;
@@ -38,15 +39,21 @@ public partial class MainWindow : Window
         _isLoading = true;
         _settings = _settingsService.Load();
 
-        foreach (var rule in _settings.Rules)
+        foreach (var rule in _settings.Rules ?? new List<KeyboardRule>())
         {
             EnsureRuleCompatibility(rule);
             _rules.Add(rule);
         }
 
+        foreach (var disabledKeyboard in _settings.DisabledKeyboards ?? new List<DisabledKeyboardRule>())
+        {
+            _disabledKeyboards.Add(disabledKeyboard);
+        }
+
         KeyboardList.ItemsSource = _devices;
         RuleDeviceCombo.ItemsSource = _devices;
         RulesList.ItemsSource = _rules;
+        DisabledKeyboardsList.ItemsSource = _disabledKeyboards;
         KeyCombo.ItemsSource = BuildKeyOptions();
         KeyCombo.SelectedIndex = 0;
 
@@ -132,6 +139,7 @@ public partial class MainWindow : Window
     private void RefreshDevices_Click(object sender, RoutedEventArgs e)
     {
         RefreshDevices();
+        UpdateSelectedDeviceStatus();
     }
 
     private void DetectDevice_Click(object sender, RoutedEventArgs e)
@@ -146,6 +154,7 @@ public partial class MainWindow : Window
         if (KeyboardList.SelectedItem is not KeyboardDevice device)
         {
             SelectedDeviceText.Text = "No keyboard selected";
+            SelectedDeviceStatusText.Text = "Status: not selected";
             DevicePathText.Text = string.Empty;
             return;
         }
@@ -153,6 +162,70 @@ public partial class MainWindow : Window
         SelectedDeviceText.Text = device.DisplayName;
         DevicePathText.Text = device.DevicePath;
         RuleDeviceCombo.SelectedItem = device;
+        UpdateSelectedDeviceStatus();
+    }
+
+    private void DisableSelectedKeyboard_Click(object sender, RoutedEventArgs e)
+    {
+        if (KeyboardList.SelectedItem is not KeyboardDevice device)
+        {
+            UpdateStatus("Select a keyboard first");
+            return;
+        }
+
+        if (IsKeyboardDisabled(device.Id))
+        {
+            UpdateStatus("This keyboard is already disabled");
+            return;
+        }
+
+        var otherEnabledKeyboardExists = _devices
+            .Where(item => !string.Equals(item.Id, device.Id, StringComparison.OrdinalIgnoreCase))
+            .Any(item => !IsKeyboardDisabled(item.Id));
+
+        if (!otherEnabledKeyboardExists)
+        {
+            UpdateStatus("Safety block: cannot disable the last enabled keyboard");
+            return;
+        }
+
+        _disabledKeyboards.Add(new DisabledKeyboardRule
+        {
+            DeviceId = device.Id,
+            DeviceName = device.DisplayName,
+            IsEnabled = true
+        });
+
+        SaveSettingsFromUi();
+        UpdateDeviceBlocker();
+        UpdateRuleCount();
+        UpdateSelectedDeviceStatus();
+        UpdateStatus("Selected keyboard disabled and saved");
+    }
+
+    private void EnableSelectedKeyboard_Click(object sender, RoutedEventArgs e)
+    {
+        DisabledKeyboardRule? disabledRule = null;
+
+        if (KeyboardList.SelectedItem is KeyboardDevice device)
+        {
+            disabledRule = _disabledKeyboards.FirstOrDefault(rule => string.Equals(rule.DeviceId, device.Id, StringComparison.OrdinalIgnoreCase));
+        }
+
+        disabledRule ??= DisabledKeyboardsList.SelectedItem as DisabledKeyboardRule;
+
+        if (disabledRule is null)
+        {
+            UpdateStatus("Select a disabled keyboard to enable");
+            return;
+        }
+
+        _disabledKeyboards.Remove(disabledRule);
+        SaveSettingsFromUi();
+        UpdateDeviceBlocker();
+        UpdateRuleCount();
+        UpdateSelectedDeviceStatus();
+        UpdateStatus("Keyboard enabled again");
     }
 
     private void AddRule_Click(object sender, RoutedEventArgs e)
@@ -195,7 +268,7 @@ public partial class MainWindow : Window
         SaveSettingsFromUi();
         UpdateDeviceBlocker();
         UpdateRuleCount();
-        UpdateStatus("Device-specific rule saved and active");
+        UpdateStatus("Device-specific key rule saved and active");
     }
 
     private void RemoveRule_Click(object sender, RoutedEventArgs e)
@@ -210,12 +283,17 @@ public partial class MainWindow : Window
         SaveSettingsFromUi();
         UpdateDeviceBlocker();
         UpdateRuleCount();
-        UpdateStatus("Rule removed");
+        UpdateStatus("Key rule removed");
     }
 
     private void OpenRulesTab_Click(object sender, RoutedEventArgs e)
     {
         RulesTab.IsSelected = true;
+    }
+
+    private void OpenKeyboardsTab_Click(object sender, RoutedEventArgs e)
+    {
+        KeyboardsTab.IsSelected = true;
     }
 
     private void SettingsCheck_Changed(object sender, RoutedEventArgs e)
@@ -244,7 +322,7 @@ public partial class MainWindow : Window
         {
             e.Cancel = true;
             Hide();
-            _trayIconService?.ShowBalloon("Key Disabler is still running", "Device-specific rules stay active while the tray app is running.");
+            _trayIconService?.ShowBalloon("Key Disabler is still running", "Saved keyboard disables and key rules stay active while the tray app is running.");
         }
         else
         {
@@ -290,12 +368,13 @@ public partial class MainWindow : Window
         _settings.StartWithWindows = StartWithWindowsCheck.IsChecked == true;
         _settings.MinimizeToTray = MinimizeToTrayCheck.IsChecked == true;
         _settings.Rules = _rules.ToList();
+        _settings.DisabledKeyboards = _disabledKeyboards.ToList();
         _settingsService.Save(_settings);
     }
 
     private void UpdateDeviceBlocker()
     {
-        _deviceBlockerService.UpdateRules(_rules);
+        _deviceBlockerService.UpdateRules(_rules, _disabledKeyboards);
         _deviceBlockerService.Start();
     }
 
@@ -330,7 +409,29 @@ public partial class MainWindow : Window
 
     private void UpdateRuleCount()
     {
-        RuleCountText.Text = _rules.Count == 1 ? "1 rule saved" : $"{_rules.Count} rules saved";
+        var keyRuleText = _rules.Count == 1 ? "1 key rule" : $"{_rules.Count} key rules";
+        var disabledKeyboardText = _disabledKeyboards.Count == 1 ? "1 disabled keyboard" : $"{_disabledKeyboards.Count} disabled keyboards";
+        RuleCountText.Text = $"{keyRuleText}, {disabledKeyboardText}";
+    }
+
+    private void UpdateSelectedDeviceStatus()
+    {
+        if (KeyboardList.SelectedItem is not KeyboardDevice device)
+        {
+            SelectedDeviceStatusText.Text = "Status: not selected";
+            return;
+        }
+
+        SelectedDeviceStatusText.Text = IsKeyboardDisabled(device.Id)
+            ? "Status: disabled"
+            : "Status: enabled";
+    }
+
+    private bool IsKeyboardDisabled(string deviceId)
+    {
+        return _disabledKeyboards.Any(rule =>
+            rule.IsEnabled &&
+            string.Equals(rule.DeviceId, deviceId, StringComparison.OrdinalIgnoreCase));
     }
 
     private void UpdateStatus(string message)
