@@ -47,4 +47,16 @@ public sealed class SettingsService
         var json = JsonSerializer.Serialize(settings, _jsonOptions);
         File.WriteAllText(SettingsPath, json);
     }
+
+    public void Reset()
+    {
+        Directory.CreateDirectory(SettingsDirectory);
+        Save(new AppSettings
+        {
+            StartWithWindows = false,
+            MinimizeToTray = true,
+            Rules = new List<KeyboardRule>(),
+            DisabledKeyboards = new List<DisabledKeyboardRule>()
+        });
+    }
 }
