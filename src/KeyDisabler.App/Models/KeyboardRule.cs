@@ -4,6 +4,7 @@ public sealed class KeyboardRule
 {
     public string Id { get; set; } = Guid.NewGuid().ToString("N");
     public string DeviceId { get; set; } = string.Empty;
+    public string DeviceHardwareId { get; set; } = string.Empty;
     public string DeviceName { get; set; } = string.Empty;
     public ushort VirtualKey { get; set; }
     public ushort ScanCode { get; set; }
