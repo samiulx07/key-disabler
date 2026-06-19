@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    name: Build self-contained exe
+    name: Build Windows app and installer
     runs-on: windows-latest
 
     steps:
@@ -23,11 +23,26 @@ jobs:
       - name: Restore
         run: dotnet restore src/KeyDisabler.App/KeyDisabler.App.csproj
 
-      - name: Publish
+      - name: Publish portable app
         run: dotnet publish src/KeyDisabler.App/KeyDisabler.App.csproj -c Release -r win-x64 --self-contained true /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true /p:EnableCompressionInSingleFile=true -o publish
 
-      - name: Upload artifact
+      - name: Install Inno Setup
+        run: choco install innosetup --no-progress -y
+
+      - name: Build installer
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path installer-output | Out-Null
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "src\KeyDisabler.Installer\KeyDisabler.iss"
+
+      - name: Upload portable artifact
         uses: actions/upload-artifact@v4
         with:
-          name: KeyDisabler-win-x64
+          name: KeyDisabler-portable-win-x64
           path: publish/
+
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: KeyDisabler-installer-win-x64
+          path: installer-output/KeyDisablerSetup.exe
