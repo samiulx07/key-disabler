@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 using System.Windows.Input;
-using KeyDisabler.App.Models;
+using AppKeyboardDevice = KeyDisabler.App.Models.KeyboardDevice;
 
 namespace KeyDisabler.App.Services;
 
@@ -32,9 +32,9 @@ public sealed class RawInputService
             (uint)Marshal.SizeOf<RAWINPUTDEVICE>());
     }
 
-    public IReadOnlyList<KeyboardDevice> GetKeyboardDevices()
+    public IReadOnlyList<AppKeyboardDevice> GetKeyboardDevices()
     {
-        var devices = new List<KeyboardDevice>();
+        var devices = new List<AppKeyboardDevice>();
         uint deviceCount = 0;
         var structSize = (uint)Marshal.SizeOf<RAWINPUTDEVICELIST>();
 
@@ -71,7 +71,7 @@ public sealed class RawInputService
                     continue;
                 }
 
-                devices.Add(new KeyboardDevice
+                devices.Add(new AppKeyboardDevice
                 {
                     Id = devicePath,
                     DevicePath = devicePath,
