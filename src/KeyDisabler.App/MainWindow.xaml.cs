@@ -15,7 +15,7 @@ public partial class MainWindow : Window
 
     private readonly SettingsService _settingsService = new();
     private readonly RawInputService _rawInputService = new();
-    private readonly KeyboardHookService _keyboardHookService = new();
+    private readonly DeviceKeyboardBlockerService _deviceBlockerService = new();
     private readonly ObservableCollection<KeyboardDevice> _devices = new();
     private readonly ObservableCollection<KeyboardRule> _rules = new();
 
@@ -30,6 +30,7 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         _rawInputService.KeyPressed += RawInputService_KeyPressed;
+        _deviceBlockerService.KeyReceived += DeviceBlockerService_KeyReceived;
     }
 
     private void Window_Loaded(object sender, RoutedEventArgs e)
@@ -39,6 +40,7 @@ public partial class MainWindow : Window
 
         foreach (var rule in _settings.Rules)
         {
+            EnsureRuleCompatibility(rule);
             _rules.Add(rule);
         }
 
@@ -52,10 +54,11 @@ public partial class MainWindow : Window
         MinimizeToTrayCheck.IsChecked = _settings.MinimizeToTray;
         SettingsPathText.Text = _settingsService.SettingsPath;
 
+        _deviceBlockerService.Start();
         RefreshDevices();
         UpdateRuleCount();
-        UpdateKeyboardHook();
-        UpdateStatus(_keyboardHookService.IsRunning ? "Global blocker active" : "Blocker failed to start");
+        UpdateDeviceBlocker();
+        UpdateStatus(_deviceBlockerService.IsRunning ? "Device blocker active" : $"Driver not ready: {_deviceBlockerService.LastError}");
 
         var handle = new WindowInteropHelper(this).Handle;
         _hwndSource = HwndSource.FromHwnd(handle);
@@ -68,26 +71,59 @@ public partial class MainWindow : Window
 
     private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
-        _rawInputService.ProcessMessage(new IntPtr(msg), lParam);
+        if (!_deviceBlockerService.IsAvailable)
+        {
+            _rawInputService.ProcessMessage(new IntPtr(msg), lParam);
+        }
+
         return IntPtr.Zero;
+    }
+
+    private void DeviceBlockerService_KeyReceived(object? sender, DeviceKeyEventArgs e)
+    {
+        Dispatcher.Invoke(() =>
+        {
+            LastKeyText.Text = $"{e.KeyName} from {e.DeviceName}";
+            FooterText.Text = e.WasBlocked
+                ? $"Blocked: {e.KeyName} from {e.DeviceName}"
+                : $"Allowed: {e.KeyName} from {e.DeviceName}";
+
+            if (_isDetectingDevice)
+            {
+                var device = _devices.FirstOrDefault(item => string.Equals(item.Id, e.DeviceId, StringComparison.OrdinalIgnoreCase));
+                if (device is not null)
+                {
+                    KeyboardList.SelectedItem = device;
+                    RuleDeviceCombo.SelectedItem = device;
+                    _isDetectingDevice = false;
+                    UpdateStatus("Keyboard detected");
+                    _trayIconService?.ShowBalloon("Keyboard detected", device.DisplayName);
+                }
+            }
+        });
     }
 
     private void RawInputService_KeyPressed(object? sender, RawKeyEventArgs e)
     {
+        if (_deviceBlockerService.IsAvailable)
+        {
+            return;
+        }
+
         Dispatcher.Invoke(() =>
         {
             var device = _devices.FirstOrDefault(item => string.Equals(item.Id, e.DeviceId, StringComparison.OrdinalIgnoreCase));
             var deviceName = device?.DisplayName ?? "Unknown keyboard";
 
             LastKeyText.Text = $"{e.KeyName} from {deviceName}";
-            FooterText.Text = $"Last input: {e.KeyName} from {deviceName}";
+            FooterText.Text = $"Driver missing. Detection only: {e.KeyName} from {deviceName}";
 
             if (_isDetectingDevice && device is not null)
             {
                 KeyboardList.SelectedItem = device;
                 RuleDeviceCombo.SelectedItem = device;
                 _isDetectingDevice = false;
-                UpdateStatus("Keyboard detected");
+                UpdateStatus("Keyboard detected, but driver is missing");
                 _trayIconService?.ShowBalloon("Keyboard detected", device.DisplayName);
             }
         });
@@ -102,7 +138,7 @@ public partial class MainWindow : Window
     {
         _isDetectingDevice = true;
         UpdateStatus("Press a key on the target keyboard");
-        FooterText.Text = "Detection mode is active. Press any key from the laptop keyboard you want to identify.";
+        FooterText.Text = "Detection mode is active. Press any key from the exact keyboard you want to use for this rule.";
     }
 
     private void KeyboardList_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
@@ -135,11 +171,12 @@ public partial class MainWindow : Window
 
         var exists = _rules.Any(rule =>
             string.Equals(rule.DeviceId, device.Id, StringComparison.OrdinalIgnoreCase) &&
-            rule.VirtualKey == key.VirtualKey);
+            rule.ScanCode == key.ScanCode &&
+            rule.IsExtendedKey == key.IsExtendedKey);
 
         if (exists)
         {
-            UpdateStatus("Rule already exists");
+            UpdateStatus("Rule already exists for this keyboard and key");
             return;
         }
 
@@ -148,15 +185,17 @@ public partial class MainWindow : Window
             DeviceId = device.Id,
             DeviceName = device.DisplayName,
             VirtualKey = key.VirtualKey,
+            ScanCode = key.ScanCode,
+            IsExtendedKey = key.IsExtendedKey,
             KeyName = key.Name,
             IsEnabled = true
         };
 
         _rules.Add(rule);
         SaveSettingsFromUi();
-        UpdateKeyboardHook();
+        UpdateDeviceBlocker();
         UpdateRuleCount();
-        UpdateStatus("Rule saved and active");
+        UpdateStatus("Device-specific rule saved and active");
     }
 
     private void RemoveRule_Click(object sender, RoutedEventArgs e)
@@ -169,7 +208,7 @@ public partial class MainWindow : Window
 
         _rules.Remove(rule);
         SaveSettingsFromUi();
-        UpdateKeyboardHook();
+        UpdateDeviceBlocker();
         UpdateRuleCount();
         UpdateStatus("Rule removed");
     }
@@ -196,7 +235,7 @@ public partial class MainWindow : Window
         if (_allowClose)
         {
             _hwndSource?.RemoveHook(WndProc);
-            _keyboardHookService.Dispose();
+            _deviceBlockerService.Dispose();
             _trayIconService?.Dispose();
             return;
         }
@@ -205,13 +244,13 @@ public partial class MainWindow : Window
         {
             e.Cancel = true;
             Hide();
-            _trayIconService?.ShowBalloon("Key Disabler is still running", "Saved rules stay active while the tray app is running.");
+            _trayIconService?.ShowBalloon("Key Disabler is still running", "Device-specific rules stay active while the tray app is running.");
         }
         else
         {
             _allowClose = true;
             _hwndSource?.RemoveHook(WndProc);
-            _keyboardHookService.Dispose();
+            _deviceBlockerService.Dispose();
             _trayIconService?.Dispose();
             System.Windows.Application.Current.Shutdown();
         }
@@ -222,7 +261,13 @@ public partial class MainWindow : Window
         var selectedId = (KeyboardList.SelectedItem as KeyboardDevice)?.Id;
         _devices.Clear();
 
-        foreach (var device in _rawInputService.GetKeyboardDevices())
+        var devices = _deviceBlockerService.GetKeyboardDevices();
+        if (devices.Count == 0)
+        {
+            devices = _rawInputService.GetKeyboardDevices();
+        }
+
+        foreach (var device in devices)
         {
             _devices.Add(device);
         }
@@ -248,10 +293,10 @@ public partial class MainWindow : Window
         _settingsService.Save(_settings);
     }
 
-    private void UpdateKeyboardHook()
+    private void UpdateDeviceBlocker()
     {
-        _keyboardHookService.UpdateRules(_rules);
-        _keyboardHookService.Start();
+        _deviceBlockerService.UpdateRules(_rules);
+        _deviceBlockerService.Start();
     }
 
     private void ApplyStartupSetting(bool enabled)
@@ -294,26 +339,42 @@ public partial class MainWindow : Window
         FooterText.Text = message;
     }
 
+    private static void EnsureRuleCompatibility(KeyboardRule rule)
+    {
+        if (rule.ScanCode > 0)
+        {
+            return;
+        }
+
+        var option = BuildKeyOptions().FirstOrDefault(item => item.VirtualKey == rule.VirtualKey);
+        if (option is not null)
+        {
+            rule.ScanCode = option.ScanCode;
+            rule.IsExtendedKey = option.IsExtendedKey;
+        }
+    }
+
     private static IReadOnlyList<KeyOption> BuildKeyOptions()
     {
         return new List<KeyOption>
         {
-            new("Space", 0x20),
-            new("Enter", 0x0D),
-            new("Backspace", 0x08),
-            new("Tab", 0x09),
-            new("Escape", 0x1B),
-            new("Left Ctrl", 0xA2),
-            new("Right Ctrl", 0xA3),
-            new("Left Alt", 0xA4),
-            new("Right Alt", 0xA5),
-            new("Left Shift", 0xA0),
-            new("Right Shift", 0xA1),
-            new("Caps Lock", 0x14),
-            new("Delete", 0x2E),
-            new("Insert", 0x2D)
+            new("Space", 0x20, 0x39, false),
+            new("Enter", 0x0D, 0x1C, false),
+            new("Numpad Enter", 0x0D, 0x1C, true),
+            new("Backspace", 0x08, 0x0E, false),
+            new("Tab", 0x09, 0x0F, false),
+            new("Escape", 0x1B, 0x01, false),
+            new("Left Ctrl", 0xA2, 0x1D, false),
+            new("Right Ctrl", 0xA3, 0x1D, true),
+            new("Left Alt", 0xA4, 0x38, false),
+            new("Right Alt", 0xA5, 0x38, true),
+            new("Left Shift", 0xA0, 0x2A, false),
+            new("Right Shift", 0xA1, 0x36, false),
+            new("Caps Lock", 0x14, 0x3A, false),
+            new("Delete", 0x2E, 0x53, true),
+            new("Insert", 0x2D, 0x52, true)
         };
     }
 
-    private sealed record KeyOption(string Name, ushort VirtualKey);
+    private sealed record KeyOption(string Name, ushort VirtualKey, ushort ScanCode, bool IsExtendedKey);
 }
