@@ -207,7 +207,7 @@ public partial class MainWindow : Window
             _allowClose = true;
             _hwndSource?.RemoveHook(WndProc);
             _trayIconService?.Dispose();
-            Application.Current.Shutdown();
+            System.Windows.Application.Current.Shutdown();
         }
     }
 
