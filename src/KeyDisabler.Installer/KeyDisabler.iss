@@ -18,7 +18,6 @@ OutputBaseFilename=KeyDisablerSetup
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
-SetupIconFile=
 UninstallDisplayName={#MyAppName}
 UninstallDisplayIcon={app}\{#MyAppExeName}
 PrivilegesRequired=admin
