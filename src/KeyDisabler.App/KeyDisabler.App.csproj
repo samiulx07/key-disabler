@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <AssemblyName>KeyDisabler</AssemblyName>
+    <RootNamespace>KeyDisabler.App</RootNamespace>
+    <Version>0.1.0</Version>
+    <Authors>Samiul Hasan</Authors>
+    <Product>Key Disabler</Product>
+    <Description>Standalone Windows utility for per-device keyboard rule management.</Description>
+  </PropertyGroup>
+</Project>
