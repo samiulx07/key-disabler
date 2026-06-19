@@ -8,6 +8,7 @@ public sealed class DeviceKeyboardBlockerService : IDisposable
     private readonly object _syncRoot = new();
     private readonly InterceptionNative.InterceptionPredicate _keyboardPredicate;
     private readonly Dictionary<string, KeyboardRule> _rulesByDeviceAndKey = new(StringComparer.OrdinalIgnoreCase);
+    private readonly HashSet<string> _disabledDeviceIds = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, KeyboardDevice> _deviceCache = new(StringComparer.OrdinalIgnoreCase);
 
     private CancellationTokenSource? _cancellationTokenSource;
@@ -72,7 +73,7 @@ public sealed class DeviceKeyboardBlockerService : IDisposable
         _workerTask = Task.Run(() => WorkerLoop(_cancellationTokenSource.Token));
     }
 
-    public void UpdateRules(IEnumerable<KeyboardRule> rules)
+    public void UpdateRules(IEnumerable<KeyboardRule> rules, IEnumerable<DisabledKeyboardRule> disabledKeyboards)
     {
         var activeRules = rules
             .Where(rule => rule.IsEnabled)
@@ -80,12 +81,24 @@ public sealed class DeviceKeyboardBlockerService : IDisposable
             .Where(rule => rule.ScanCode > 0)
             .ToDictionary(BuildRuleKey, rule => rule, StringComparer.OrdinalIgnoreCase);
 
+        var disabledDevices = disabledKeyboards
+            .Where(rule => rule.IsEnabled)
+            .Select(rule => rule.DeviceId)
+            .Where(deviceId => !string.IsNullOrWhiteSpace(deviceId))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
         lock (_syncRoot)
         {
             _rulesByDeviceAndKey.Clear();
             foreach (var pair in activeRules)
             {
                 _rulesByDeviceAndKey[pair.Key] = pair.Value;
+            }
+
+            _disabledDeviceIds.Clear();
+            foreach (var deviceId in disabledDevices)
+            {
+                _disabledDeviceIds.Add(deviceId);
             }
         }
     }
@@ -115,7 +128,7 @@ public sealed class DeviceKeyboardBlockerService : IDisposable
 
             lock (_syncRoot)
             {
-                shouldBlock = _rulesByDeviceAndKey.ContainsKey(ruleKey);
+                shouldBlock = _disabledDeviceIds.Contains(deviceId) || _rulesByDeviceAndKey.ContainsKey(ruleKey);
             }
 
             KeyReceived?.Invoke(
