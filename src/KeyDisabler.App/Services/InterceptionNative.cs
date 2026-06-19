@@ -52,7 +52,7 @@ internal static class InterceptionNative
         ref InterceptionKeyStroke stroke,
         uint nstroke);
 
-    [DllImport("interception.dll", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Unicode)]
+    [DllImport("interception.dll", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
     public static extern int interception_get_hardware_id(
         IntPtr context,
         int device,
