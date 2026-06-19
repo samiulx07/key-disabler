@@ -29,7 +29,7 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Tasks]
 Name: "desktopicon"; Description: "Create a desktop shortcut"; GroupDescription: "Additional shortcuts:"; Flags: checkedonce
-Name: "startupicon"; Description: "Start Key Disabler with Windows"; GroupDescription: "Startup options:"; Flags: unchecked
+Name: "startupicon"; Description: "Start Key Disabler with Windows"; GroupDescription: "Startup options:"; Flags: checkedonce
 Name: "installdriver"; Description: "Install device-level keyboard driver"; GroupDescription: "Driver options:"; Flags: checkedonce
 
 [Files]
