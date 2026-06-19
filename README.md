@@ -1,26 +1,39 @@
 # Key Disabler
 
-Key Disabler is a Windows standalone desktop utility for keyboard detection, saved key rules, tray behavior, startup restore, and installable packaging.
+Key Disabler is a Windows standalone desktop utility for keyboard detection, saved device-specific key rules, tray behavior, startup restore, and installable packaging.
 
 ## Current phase
 
 This repository currently contains:
 
 - WPF desktop app
-- Raw Input keyboard device detection
-- Device + key rule management
-- Local JSON settings storage
-- System tray support
+- device-specific keyboard listing through the Interception driver
+- exact device + key rule management
+- local JSON settings storage
+- system tray support
 - Windows startup setting
-- Active key blocking fallback while the app is running
+- device-specific key blocking while the app is running
 - GitHub Actions build for portable app and installer
 - Inno Setup installer
 
-## Current limitation
+## Device-specific behavior
 
-The current blocker is a working global fallback. If you block Space, Space is blocked while the app is running. This does not yet keep the same key working on an external keyboard.
+Rules are applied as:
 
-True per-device-only blocking, for example laptop Space blocked while external Space works, requires a low-level driver or service layer. That driver layer will be added in a later phase.
+```text
+selected keyboard + selected key
+```
+
+Example:
+
+```text
+Keyboard 1 + Space = blocked
+Keyboard 2 + Space = allowed
+Keyboard 3 + Space = allowed
+Keyboard 4 + Space = allowed
+```
+
+This requires the Interception driver and `interception.dll`, which are bundled into the build artifact by GitHub Actions.
 
 ## Build artifacts
 
@@ -41,6 +54,7 @@ The installer creates:
 - Start Menu shortcut
 - optional Desktop shortcut
 - optional startup shortcut
+- optional device-level keyboard driver installation
 - Windows Apps & Features / Control Panel uninstall entry
 
 Installer output:
@@ -48,6 +62,10 @@ Installer output:
 ```text
 KeyDisablerSetup.exe
 ```
+
+## Important note
+
+After installing the device-level driver, Windows may require a restart before the blocker works correctly.
 
 ## Local portable build
 
