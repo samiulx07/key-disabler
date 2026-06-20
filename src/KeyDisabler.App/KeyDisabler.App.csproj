@@ -7,11 +7,21 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\AppIcon.ico</ApplicationIcon>
     <AssemblyName>KeyDisabler</AssemblyName>
     <RootNamespace>KeyDisabler.App</RootNamespace>
-    <Version>0.2.0</Version>
+    <Version>0.2.1</Version>
     <Authors>Samiul Hasan</Authors>
     <Product>Key Disabler</Product>
     <Description>Standalone Windows utility for per-device keyboard rule management.</Description>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="Assets\AppIcon.ico.b64" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <Target Name="DecodeAppIcon" BeforeTargets="BeforeBuild">
+    <MakeDir Directories="$(MSBuildProjectDirectory)\Assets" />
+    <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -Command &quot;$b64 = Get-Content -Raw '$(MSBuildProjectDirectory)\Assets\AppIcon.ico.b64'; [IO.File]::WriteAllBytes('$(MSBuildProjectDirectory)\Assets\AppIcon.ico', [Convert]::FromBase64String($b64))&quot;" />
+  </Target>
 </Project>
