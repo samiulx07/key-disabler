@@ -1,4 +1,3 @@
-using System.Drawing;
 using System.Windows;
 using Forms = System.Windows.Forms;
 
@@ -23,7 +22,7 @@ public sealed class TrayIconService : IDisposable
         _notifyIcon = new Forms.NotifyIcon
         {
             Text = "Key Disabler",
-            Icon = SystemIcons.Application,
+            Icon = BrandAssetService.LoadTrayIconOrDefault(),
             Visible = true,
             ContextMenuStrip = menu
         };
@@ -59,6 +58,7 @@ public sealed class TrayIconService : IDisposable
         }
 
         _notifyIcon.Visible = false;
+        _notifyIcon.Icon?.Dispose();
         _notifyIcon.Dispose();
         _isDisposed = true;
     }
