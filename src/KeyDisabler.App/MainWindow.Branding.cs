@@ -29,7 +29,7 @@ public partial class MainWindow
 {
     private bool _singleInstanceHookAttached;
 
-    private void ApplyBrandingAndSingleInstanceHooks()
+    internal void ApplyBrandingAndSingleInstanceHooks()
     {
         Icon = BrandAssetService.LoadWindowIcon();
         AboutLogoImage.Source = BrandAssetService.LoadAboutIcon();
