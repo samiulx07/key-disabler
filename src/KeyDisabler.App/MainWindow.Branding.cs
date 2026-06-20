@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Interop;
 using KeyDisabler.App.Services;
 
@@ -33,6 +34,7 @@ public partial class MainWindow
     {
         Icon = BrandAssetService.LoadWindowIcon();
         AboutLogoImage.Source = BrandAssetService.LoadAboutLogo();
+        UseFullAboutLogoLayout();
 
         if (_singleInstanceHookAttached)
         {
@@ -43,6 +45,29 @@ public partial class MainWindow
         var source = HwndSource.FromHwnd(handle);
         source?.AddHook(SingleInstanceWndProc);
         _singleInstanceHookAttached = true;
+    }
+
+    private void UseFullAboutLogoLayout()
+    {
+        AboutLogoImage.Width = 780;
+        AboutLogoImage.Height = 130;
+        AboutLogoImage.HorizontalAlignment = HorizontalAlignment.Left;
+        AboutLogoImage.VerticalAlignment = VerticalAlignment.Center;
+        Grid.SetColumn(AboutLogoImage, 0);
+        Grid.SetColumnSpan(AboutLogoImage, 2);
+
+        if (AboutLogoImage.Parent is not Grid logoGrid)
+        {
+            return;
+        }
+
+        foreach (UIElement child in logoGrid.Children)
+        {
+            if (!ReferenceEquals(child, AboutLogoImage))
+            {
+                child.Visibility = Visibility.Collapsed;
+            }
+        }
     }
 
     private IntPtr SingleInstanceWndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
