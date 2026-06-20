@@ -9,21 +9,15 @@ namespace KeyDisabler.App.Services;
 
 public static class BrandAssetService
 {
-    private const string AppIconBase64Path = "Assets/AppIcon.ico.b64";
+    private const string AppIconPath = "Assets/AppIcon.ico";
+    private const string AboutLogoPath = "Assets/AboutLogo.png";
 
     public static Icon LoadTrayIconOrDefault()
     {
         try
         {
-            var iconBytes = LoadIconBytes();
-            if (iconBytes is null)
-            {
-                return SystemIcons.Application;
-            }
-
-            using var stream = new MemoryStream(iconBytes);
-            using var icon = new Icon(stream);
-            return (Icon)icon.Clone();
+            var path = BuildAssetPath(AppIconPath);
+            return File.Exists(path) ? new Icon(path) : SystemIcons.Application;
         }
         catch
         {
@@ -36,10 +30,7 @@ public static class BrandAssetService
         try
         {
             using var icon = LoadTrayIconOrDefault();
-            return Imaging.CreateBitmapSourceFromHIcon(
-                icon.Handle,
-                Int32Rect.Empty,
-                BitmapSizeOptions.FromWidthAndHeight(256, 256));
+            return Imaging.CreateBitmapSourceFromHIcon(icon.Handle, Int32Rect.Empty, BitmapSizeOptions.FromWidthAndHeight(256, 256));
         }
         catch
         {
@@ -47,20 +38,32 @@ public static class BrandAssetService
         }
     }
 
-    public static ImageSource? LoadAboutIcon()
+    public static ImageSource? LoadAboutLogo()
     {
-        return LoadWindowIcon();
-    }
+        try
+        {
+            var path = BuildAssetPath(AboutLogoPath);
+            if (!File.Exists(path))
+            {
+                return null;
+            }
 
-    private static byte[]? LoadIconBytes()
-    {
-        var path = Path.Combine(AppContext.BaseDirectory, AppIconBase64Path.Replace('/', Path.DirectorySeparatorChar));
-        if (!File.Exists(path))
+            var image = new BitmapImage();
+            image.BeginInit();
+            image.CacheOption = BitmapCacheOption.OnLoad;
+            image.UriSource = new Uri(path, UriKind.Absolute);
+            image.EndInit();
+            image.Freeze();
+            return image;
+        }
+        catch
         {
             return null;
         }
+    }
 
-        var base64 = File.ReadAllText(path);
-        return Convert.FromBase64String(base64);
+    private static string BuildAssetPath(string relativePath)
+    {
+        return Path.Combine(AppContext.BaseDirectory, relativePath.Replace('/', Path.DirectorySeparatorChar));
     }
 }
