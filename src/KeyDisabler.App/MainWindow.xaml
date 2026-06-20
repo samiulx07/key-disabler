@@ -25,12 +25,12 @@
 
                 <StackPanel>
                     <TextBlock Text="Key Disabler" FontSize="30" FontWeight="Bold" Foreground="#111827" />
-                    <TextBlock Text="Disable a full selected keyboard, or disable captured keys only on a selected keyboard. Mouse devices are never rule targets."
+                    <TextBlock Text="Disable captured keys on a selected keyboard. Mouse devices are never rule targets."
                                Foreground="#6B7280"
                                Margin="0,6,0,0" />
                 </StackPanel>
 
-                <Border Grid.Column="1" Background="#EFF6FF" BorderBrush="#BFDBFE" BorderThickness="1" CornerRadius="999" Padding="14,8" VerticalAlignment="Center">
+                <Border Grid.Column="1" Background="#EFF6FF" BorderBrush="#BFDBFE" BorderThickness="1" CornerRadius="8" Padding="14,8" VerticalAlignment="Center">
                     <TextBlock x:Name="StatusPill" Text="Ready" Foreground="#1D4ED8" FontWeight="SemiBold" />
                 </Border>
             </Grid>
@@ -211,6 +211,53 @@
 
                         <TextBlock Text="Settings file" FontWeight="SemiBold" Foreground="#374151" />
                         <TextBox x:Name="SettingsPathText" IsReadOnly="True" />
+                    </StackPanel>
+                </Border>
+            </TabItem>
+
+            <TabItem Header="Dev Options">
+                <Border Background="White" CornerRadius="18" Padding="26" Margin="0,12,0,0">
+                    <StackPanel>
+                        <Border Background="#F9FAFB" BorderBrush="#E5E7EB" BorderThickness="1" CornerRadius="18" Padding="20" Margin="0,0,0,18">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="96" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Image x:Name="AboutLogoImage" Width="78" Height="78" Stretch="Uniform" VerticalAlignment="Center" />
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="18,0,0,0">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="Key" FontSize="34" FontWeight="Bold" Foreground="#DC2626" />
+                                        <TextBlock Text=" Disabler" FontSize="34" FontWeight="Bold" Foreground="#111827" />
+                                    </StackPanel>
+                                    <TextBlock Text="Device-specific keyboard control utility" Foreground="#6B7280" Margin="0,4,0,0" />
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <TextBlock Text="Developed by" FontSize="14" FontWeight="SemiBold" Foreground="#6B7280" />
+                        <TextBlock Text="Samslab (Samiul Hasan)" FontSize="26" FontWeight="Bold" Foreground="#111827" Margin="0,4,0,18" />
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="130" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="GitHub" FontWeight="SemiBold" Foreground="#374151" Margin="0,0,0,10" />
+                            <TextBox Grid.Row="0" Grid.Column="1" Text="https://github.com/SamiulxHasanx07" IsReadOnly="True" BorderThickness="0" Background="#F3F4F6" Padding="10,6" Margin="0,0,0,10" />
+
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Email" FontWeight="SemiBold" Foreground="#374151" Margin="0,0,0,10" />
+                            <TextBox Grid.Row="1" Grid.Column="1" Text="samiulxhasan650@gmail.com" IsReadOnly="True" BorderThickness="0" Background="#F3F4F6" Padding="10,6" Margin="0,0,0,10" />
+
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="Phone" FontWeight="SemiBold" Foreground="#374151" />
+                            <TextBox Grid.Row="2" Grid.Column="1" Text="+8801788058690" IsReadOnly="True" BorderThickness="0" Background="#F3F4F6" Padding="10,6" />
+                        </Grid>
                     </StackPanel>
                 </Border>
             </TabItem>
