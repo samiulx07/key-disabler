@@ -57,6 +57,22 @@ public sealed class DeviceKeyboardBlockerService : IDisposable
             _deviceCache[id] = keyboard;
         }
 
+        LastError = devices.Count == 0
+            ? "No Interception keyboard slots reported hardware IDs. Restart Windows after driver install, then press Refresh again."
+            : string.Empty;
+
+        return devices;
+    }
+
+    public IReadOnlyList<KeyboardDevice> HardRefreshKeyboardDevices()
+    {
+        StopWorkerAndDestroyContext();
+        _deviceCache.Clear();
+        IsAvailable = false;
+        LastError = string.Empty;
+
+        var devices = GetKeyboardDevices();
+        Start();
         return devices;
     }
 
@@ -113,8 +129,11 @@ public sealed class DeviceKeyboardBlockerService : IDisposable
         }
         catch (Exception ex)
         {
-            LastError = ex.Message;
-            IsAvailable = false;
+            if (!cancellationToken.IsCancellationRequested)
+            {
+                LastError = ex.Message;
+                IsAvailable = false;
+            }
         }
     }
 
@@ -243,6 +262,21 @@ public sealed class DeviceKeyboardBlockerService : IDisposable
             : deviceId;
     }
 
+    private void StopWorkerAndDestroyContext()
+    {
+        _cancellationTokenSource?.Cancel();
+
+        if (_context != IntPtr.Zero)
+        {
+            InterceptionNative.interception_destroy_context(_context);
+            _context = IntPtr.Zero;
+        }
+
+        _cancellationTokenSource?.Dispose();
+        _cancellationTokenSource = null;
+        _workerTask = null;
+    }
+
     private static string BuildDisplayName(int device, string hardwareId)
     {
         if (string.IsNullOrWhiteSpace(hardwareId))
@@ -291,15 +325,7 @@ public sealed class DeviceKeyboardBlockerService : IDisposable
             return;
         }
 
-        _cancellationTokenSource?.Cancel();
-
-        if (_context != IntPtr.Zero)
-        {
-            InterceptionNative.interception_destroy_context(_context);
-            _context = IntPtr.Zero;
-        }
-
-        _cancellationTokenSource?.Dispose();
+        StopWorkerAndDestroyContext();
         _isDisposed = true;
     }
 }
