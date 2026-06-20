@@ -88,13 +88,13 @@
                         <DockPanel>
                             <StackPanel DockPanel.Dock="Top">
                                 <TextBlock Text="Connected keyboards" FontSize="20" FontWeight="SemiBold" Foreground="#111827" />
-                                <TextBlock Text="Select the laptop keyboard or use detection mode to identify it by pressing a key."
+                                <TextBlock Text="Select the laptop keyboard or use detection mode to identify it by pressing a key. Refresh performs a hard driver scan."
                                            TextWrapping="Wrap"
                                            Foreground="#6B7280"
                                            Margin="0,8,0,12" />
 
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
-                                    <Button Content="Refresh" Click="RefreshDevices_Click" Margin="0,0,8,0" />
+                                    <Button Content="Refresh" Click="HardRefreshDevices_Click" Margin="0,0,8,0" />
                                     <Button Content="Detect by key press" Click="DetectDevice_Click" />
                                 </StackPanel>
                             </StackPanel>
