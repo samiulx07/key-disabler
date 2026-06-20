@@ -32,7 +32,7 @@ public partial class MainWindow
     internal void ApplyBrandingAndSingleInstanceHooks()
     {
         Icon = BrandAssetService.LoadWindowIcon();
-        AboutLogoImage.Source = BrandAssetService.LoadAboutIcon();
+        AboutLogoImage.Source = BrandAssetService.LoadAboutLogo();
 
         if (_singleInstanceHookAttached)
         {
