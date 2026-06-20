@@ -34,62 +34,7 @@ public sealed class RawInputService
 
     public IReadOnlyList<AppKeyboardDevice> GetKeyboardDevices()
     {
-        var devices = new List<AppKeyboardDevice>();
-        uint deviceCount = 0;
-        var structSize = (uint)Marshal.SizeOf<RAWINPUTDEVICELIST>();
-
-        var result = GetRawInputDeviceList(IntPtr.Zero, ref deviceCount, structSize);
-        if (result == uint.MaxValue || deviceCount == 0)
-        {
-            return devices;
-        }
-
-        var bufferSize = (int)(structSize * deviceCount);
-        var buffer = Marshal.AllocHGlobal(bufferSize);
-
-        try
-        {
-            result = GetRawInputDeviceList(buffer, ref deviceCount, structSize);
-            if (result == uint.MaxValue)
-            {
-                return devices;
-            }
-
-            for (var i = 0; i < deviceCount; i++)
-            {
-                var itemPointer = IntPtr.Add(buffer, i * (int)structSize);
-                var item = Marshal.PtrToStructure<RAWINPUTDEVICELIST>(itemPointer);
-
-                if (item.dwType != RIM_TYPEKEYBOARD)
-                {
-                    continue;
-                }
-
-                var devicePath = GetDevicePath(item.hDevice);
-                if (string.IsNullOrWhiteSpace(devicePath))
-                {
-                    continue;
-                }
-
-                devices.Add(new AppKeyboardDevice
-                {
-                    Id = devicePath,
-                    DevicePath = devicePath,
-                    DisplayName = BuildDisplayName(devicePath),
-                    DeviceType = "Keyboard"
-                });
-            }
-        }
-        finally
-        {
-            Marshal.FreeHGlobal(buffer);
-        }
-
-        return devices
-            .GroupBy(device => device.Id, StringComparer.OrdinalIgnoreCase)
-            .Select(group => group.First())
-            .OrderBy(device => device.DisplayName)
-            .ToList();
+        return Array.Empty<AppKeyboardDevice>();
     }
 
     public void ProcessMessage(IntPtr message, IntPtr lParam)
@@ -176,60 +121,10 @@ public sealed class RawInputService
         }
     }
 
-    private static string BuildDisplayName(string devicePath)
-    {
-        var upper = devicePath.ToUpperInvariant();
-
-        if (upper.Contains("ACPI") || upper.Contains("PNP0303") || upper.Contains("PNP0320"))
-        {
-            return "Built-in / Laptop Keyboard";
-        }
-
-        if (upper.Contains("VID_"))
-        {
-            var vid = ExtractToken(upper, "VID_");
-            var pid = ExtractToken(upper, "PID_");
-            return string.IsNullOrWhiteSpace(pid)
-                ? $"USB Keyboard {vid}".Trim()
-                : $"USB Keyboard {vid} {pid}".Trim();
-        }
-
-        if (upper.Contains("BTH") || upper.Contains("BLUETOOTH"))
-        {
-            return "Bluetooth Keyboard";
-        }
-
-        return "Keyboard Device";
-    }
-
-    private static string ExtractToken(string value, string prefix)
-    {
-        var index = value.IndexOf(prefix, StringComparison.OrdinalIgnoreCase);
-        if (index < 0)
-        {
-            return string.Empty;
-        }
-
-        var start = index + prefix.Length;
-        var end = start;
-        while (end < value.Length && char.IsLetterOrDigit(value[end]))
-        {
-            end++;
-        }
-
-        return value[start..end];
-    }
-
     [DllImport("user32.dll", SetLastError = true)]
     private static extern bool RegisterRawInputDevices(
         RAWINPUTDEVICE[] pRawInputDevices,
         uint uiNumDevices,
-        uint cbSize);
-
-    [DllImport("user32.dll", SetLastError = true)]
-    private static extern uint GetRawInputDeviceList(
-        IntPtr pRawInputDeviceList,
-        ref uint puiNumDevices,
         uint cbSize);
 
     [DllImport("user32.dll", EntryPoint = "GetRawInputDeviceInfoW", CharSet = CharSet.Unicode, SetLastError = true)]
@@ -257,19 +152,19 @@ public sealed class RawInputService
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    private struct RAWINPUTDEVICELIST
-    {
-        public IntPtr hDevice;
-        public uint dwType;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
     private struct RAWINPUTHEADER
     {
         public uint dwType;
         public uint dwSize;
         public IntPtr hDevice;
         public IntPtr wParam;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct RAWINPUT
+    {
+        public RAWINPUTHEADER header;
+        public RAWKEYBOARD keyboard;
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -281,12 +176,5 @@ public sealed class RawInputService
         public ushort VKey;
         public uint Message;
         public uint ExtraInformation;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    private struct RAWINPUT
-    {
-        public RAWINPUTHEADER header;
-        public RAWKEYBOARD keyboard;
     }
 }
