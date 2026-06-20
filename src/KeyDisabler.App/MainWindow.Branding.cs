@@ -3,6 +3,8 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Interop;
 using KeyDisabler.App.Services;
+using WpfHorizontalAlignment = System.Windows.HorizontalAlignment;
+using WpfVerticalAlignment = System.Windows.VerticalAlignment;
 
 namespace KeyDisabler.App;
 
@@ -51,8 +53,8 @@ public partial class MainWindow
     {
         AboutLogoImage.Width = 780;
         AboutLogoImage.Height = 130;
-        AboutLogoImage.HorizontalAlignment = HorizontalAlignment.Left;
-        AboutLogoImage.VerticalAlignment = VerticalAlignment.Center;
+        AboutLogoImage.HorizontalAlignment = WpfHorizontalAlignment.Left;
+        AboutLogoImage.VerticalAlignment = WpfVerticalAlignment.Center;
         Grid.SetColumn(AboutLogoImage, 0);
         Grid.SetColumnSpan(AboutLogoImage, 2);
 
