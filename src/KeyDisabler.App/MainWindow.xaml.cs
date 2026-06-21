@@ -764,4 +764,86 @@ public partial class MainWindow : Window
     }
 
     private sealed record KeyOption(string Name, ushort VirtualKey, ushort ScanCode, bool IsExtendedKey);
+    private void ExportSettings_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new Microsoft.Win32.SaveFileDialog
+        {
+            Filter = "JSON files (*.json)|*.json|All files (*.*)|*.*",
+            DefaultExt = ".json",
+            FileName = "KeyDisablerSettings.json",
+            Title = "Export Settings"
+        };
+
+        if (dialog.ShowDialog() == true)
+        {
+            try
+            {
+                File.Copy(_settingsService.SettingsPath, dialog.FileName, true);
+                UpdateStatus("Settings exported successfully");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to export settings: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+    }
+
+    private void ImportSettings_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new Microsoft.Win32.OpenFileDialog
+        {
+            Filter = "JSON files (*.json)|*.json|All files (*.*)|*.*",
+            DefaultExt = ".json",
+            Title = "Import Settings"
+        };
+
+        if (dialog.ShowDialog() == true)
+        {
+            try
+            {
+                File.Copy(dialog.FileName, _settingsService.SettingsPath, true);
+                
+                // Reload settings
+                _settings = _settingsService.Load();
+                
+                // Refresh UI checkboxes
+                StartWithWindowsCheck.IsChecked = _settings.StartWithWindows;
+                MinimizeToTrayCheck.IsChecked = _settings.MinimizeToTray;
+                ThemeComboBox.SelectedIndex = _settings.Theme switch
+                {
+                    AppThemeMode.System => 0,
+                    AppThemeMode.Light => 1,
+                    AppThemeMode.Dark => 2,
+                    _ => 0
+                };
+                ThemeService.ApplyTheme(_settings.Theme);
+
+                // Reload lists
+                _rules.Clear();
+                _disabledKeyboards.Clear();
+                _keyOptions.Clear();
+
+                foreach (var rule in _settings.Rules)
+                {
+                    EnsureRuleCompatibility(rule);
+                    _rules.Add(rule);
+                    AddKeyOptionIfMissing(new KeyOption(rule.KeyName, rule.VirtualKey, rule.ScanCode, rule.IsExtendedKey));
+                }
+
+                foreach (var kb in _settings.DisabledKeyboards)
+                {
+                    _disabledKeyboards.Add(kb);
+                }
+
+                // Restart blocker
+                UpdateDeviceBlocker();
+
+                UpdateStatus("Settings imported successfully");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to import settings: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+    }
 }

@@ -219,6 +219,12 @@
                             <ComboBoxItem Content="Dark" Tag="Dark" />
                         </ComboBox>
 
+                        <TextBlock Text="Backup &amp; Restore" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" />
+                        <StackPanel Orientation="Horizontal" Margin="0,4,0,16">
+                            <Button Content="Export settings" Click="ExportSettings_Click" Padding="14,8" Margin="0,0,8,0" />
+                            <Button Content="Import settings" Click="ImportSettings_Click" Padding="14,8" Margin="0,0,8,0" />
+                        </StackPanel>
+
                         <TextBlock Text="Settings file" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" />
                         <TextBox x:Name="SettingsPathText" IsReadOnly="True" />
                     </StackPanel>

@@ -21,3 +21,5 @@ Thumbs.db
 
 # Logs
 *.log
+dotnet
+dotnet-install.ps1

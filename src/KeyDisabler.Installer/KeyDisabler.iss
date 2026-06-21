@@ -50,3 +50,4 @@ Filename: "{app}\driver\install-interception.exe"; Parameters: "/uninstall"; Fla
 
 [UninstallDelete]
 Type: filesandordirs; Name: "{app}"
+Type: filesandordirs; Name: "{userappdata}\KeyDisabler"
