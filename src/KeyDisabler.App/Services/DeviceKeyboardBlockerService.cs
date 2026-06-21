@@ -8,6 +8,7 @@ public sealed class DeviceKeyboardBlockerService : IDisposable
     private readonly object _syncRoot = new();
     private readonly InterceptionNative.InterceptionPredicate _keyboardPredicate;
     private readonly Dictionary<string, KeyboardRule> _rulesByDeviceAndKey = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, KeyRemapRule> _remapRulesByDeviceAndKey = new(StringComparer.OrdinalIgnoreCase);
     private readonly HashSet<string> _disabledDeviceIds = new(StringComparer.OrdinalIgnoreCase);
     private readonly HashSet<string> _disabledHardwareIds = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, KeyboardDevice> _deviceCache = new(StringComparer.OrdinalIgnoreCase);
@@ -116,7 +117,7 @@ public sealed class DeviceKeyboardBlockerService : IDisposable
 
             if (!string.IsNullOrWhiteSpace(disabledRule.HardwareId))
             {
-                disabledHardwareIds.Add(disabledRule.HardwareId.Trim().ToUpperInvariant());
+                disabledHardwareIds.Add(NormalizeHardwareId(disabledRule.HardwareId));
             }
         }
 
@@ -138,6 +139,34 @@ public sealed class DeviceKeyboardBlockerService : IDisposable
             foreach (var id in disabledHardwareIds)
             {
                 _disabledHardwareIds.Add(id);
+            }
+        }
+    }
+
+    public void UpdateRemapRules(IEnumerable<KeyRemapRule> remapRules)
+    {
+        var activeRemapRules = remapRules
+            .Where(rule => rule.IsEnabled)
+            .Where(rule => rule.FromScanCode > 0)
+            .Where(rule => rule.ToScanCode > 0)
+            .ToList();
+
+        lock (_syncRoot)
+        {
+            _remapRulesByDeviceAndKey.Clear();
+
+            foreach (var rule in activeRemapRules)
+            {
+                if (!string.IsNullOrWhiteSpace(rule.DeviceId))
+                {
+                    _remapRulesByDeviceAndKey[BuildRuleKey(rule.DeviceId, rule.FromScanCode, rule.FromIsExtendedKey)] = rule;
+                }
+
+                var hardwareId = NormalizeHardwareId(rule.DeviceHardwareId);
+                if (!string.IsNullOrWhiteSpace(hardwareId))
+                {
+                    _remapRulesByDeviceAndKey[BuildRuleKey(hardwareId, rule.FromScanCode, rule.FromIsExtendedKey)] = rule;
+                }
             }
         }
     }
@@ -182,37 +211,54 @@ public sealed class DeviceKeyboardBlockerService : IDisposable
         {
             var deviceId = BuildDeviceId(device);
             var hardwareId = GetHardwareId(device);
+            var normalizedHardwareId = NormalizeHardwareId(hardwareId);
             var displayName = BuildDisplayName(device, hardwareId);
             RememberDevice(deviceId, hardwareId, displayName);
 
             var isExtended = (stroke.State & InterceptionNative.KeyStateE0) == InterceptionNative.KeyStateE0;
-            var keyName = KeyNameResolver.Resolve(stroke.Code, isExtended);
+            var originalScanCode = stroke.Code;
+            var keyName = KeyNameResolver.Resolve(originalScanCode, isExtended);
             var shouldStop = false;
+            KeyRemapRule? remapRule = null;
 
             lock (_syncRoot)
             {
-                // Check full-keyboard disable first
                 if (_disabledDeviceIds.Contains(deviceId))
                 {
                     shouldStop = true;
                 }
 
-                // Also check by hardware ID
-                if (!shouldStop && !string.IsNullOrWhiteSpace(hardwareId))
+                if (!shouldStop && !string.IsNullOrWhiteSpace(normalizedHardwareId) && _disabledHardwareIds.Contains(normalizedHardwareId))
                 {
-                    var normalizedHwId = hardwareId.Trim().ToUpperInvariant();
-                    if (_disabledHardwareIds.Contains(normalizedHwId))
+                    shouldStop = true;
+                }
+
+                if (!shouldStop)
+                {
+                    var deviceRuleKey = BuildRuleKey(deviceId, originalScanCode, isExtended);
+                    var hardwareRuleKey = BuildRuleKey(normalizedHardwareId, originalScanCode, isExtended);
+
+                    if (_rulesByDeviceAndKey.ContainsKey(deviceRuleKey) || _rulesByDeviceAndKey.ContainsKey(hardwareRuleKey))
                     {
                         shouldStop = true;
                     }
+                    else if (_remapRulesByDeviceAndKey.TryGetValue(deviceRuleKey, out var deviceRemapRule))
+                    {
+                        remapRule = deviceRemapRule;
+                    }
+                    else if (_remapRulesByDeviceAndKey.TryGetValue(hardwareRuleKey, out var hardwareRemapRule))
+                    {
+                        remapRule = hardwareRemapRule;
+                    }
                 }
+            }
 
-                // Then check per-key rules
-                if (!shouldStop)
-                {
-                    var ruleKey = BuildRuleKey(deviceId, stroke.Code, isExtended);
-                    shouldStop = _rulesByDeviceAndKey.ContainsKey(ruleKey);
-                }
+            if (!shouldStop && remapRule is not null)
+            {
+                stroke.Code = remapRule.ToScanCode;
+                stroke.State = remapRule.ToIsExtendedKey
+                    ? (ushort)(stroke.State | InterceptionNative.KeyStateE0)
+                    : (ushort)(stroke.State & ~InterceptionNative.KeyStateE0);
             }
 
             shouldForward = !shouldStop;
@@ -223,7 +269,7 @@ public sealed class DeviceKeyboardBlockerService : IDisposable
                     deviceId,
                     hardwareId,
                     ResolveDeviceName(deviceId),
-                    stroke.Code,
+                    originalScanCode,
                     isExtended,
                     keyName,
                     shouldStop));
@@ -363,9 +409,16 @@ public sealed class DeviceKeyboardBlockerService : IDisposable
         return BuildRuleKey(rule.DeviceId, rule.ScanCode, rule.IsExtendedKey);
     }
 
-    private static string BuildRuleKey(string deviceId, ushort scanCode, bool isExtended)
+    private static string BuildRuleKey(string deviceIdOrHardwareId, ushort scanCode, bool isExtended)
     {
-        return $"{deviceId}|{scanCode}|{isExtended}";
+        return $"{deviceIdOrHardwareId}|{scanCode}|{isExtended}";
+    }
+
+    private static string NormalizeHardwareId(string value)
+    {
+        return string.IsNullOrWhiteSpace(value)
+            ? string.Empty
+            : value.Trim().ToUpperInvariant();
     }
 
     public void Dispose()
