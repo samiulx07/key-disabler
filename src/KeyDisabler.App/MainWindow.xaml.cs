@@ -96,6 +96,18 @@ public partial class MainWindow : Window
 
     private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
+        if (msg == SingleInstanceService.ShowMessageId)
+        {
+            Show();
+            if (WindowState == System.Windows.WindowState.Minimized)
+            {
+                WindowState = System.Windows.WindowState.Normal;
+            }
+            Activate();
+            handled = true;
+            return IntPtr.Zero;
+        }
+
         if (!_deviceBlockerService.IsAvailable)
         {
             _rawInputService.ProcessMessage(new IntPtr(msg), lParam);
