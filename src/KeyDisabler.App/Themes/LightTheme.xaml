@@ -14,10 +14,10 @@
     <SolidColorBrush x:Key="PrimaryBrush" Color="#FC0B0A" />
     <SolidColorBrush x:Key="PrimarySoftBrush" Color="#FFE4E4" />
 
-    <SolidColorBrush x:Key="TabBarBackground" Color="#FFF1F1" />
+    <SolidColorBrush x:Key="TabBarBackground" Color="#FFFFFF" />
     <SolidColorBrush x:Key="TabSelectedBackground" Color="#FC0B0A" />
     <SolidColorBrush x:Key="TabSelectedForeground" Color="#FFFFFF" />
-    <SolidColorBrush x:Key="TabHoverBackground" Color="#FFE4E4" />
+    <SolidColorBrush x:Key="TabHoverBackground" Color="#F3F4F6" />
     <SolidColorBrush x:Key="TabUnselectedForeground" Color="#991B1B" />
 
     <SolidColorBrush x:Key="DropdownBackground" Color="#FFFFFF" />
