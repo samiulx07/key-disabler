@@ -1,3 +1,4 @@
+using System.Drawing;
 using System.Windows;
 using Forms = System.Windows.Forms;
 
@@ -7,11 +8,13 @@ public sealed class TrayIconService : IDisposable
 {
     private readonly Window _window;
     private readonly Forms.NotifyIcon _notifyIcon;
+    private readonly Icon _trayIcon;
     private bool _isDisposed;
 
     public TrayIconService(Window window)
     {
         _window = window;
+        _trayIcon = BrandAssetService.LoadTrayIconOrDefault();
 
         var menu = new Forms.ContextMenuStrip();
         menu.Items.Add("Open", null, (_, _) => ShowWindow());
@@ -22,9 +25,10 @@ public sealed class TrayIconService : IDisposable
         _notifyIcon = new Forms.NotifyIcon
         {
             Text = "Key Disabler",
-            Icon = BrandAssetService.LoadTrayIconOrDefault(),
+            Icon = _trayIcon,
             Visible = true,
-            ContextMenuStrip = menu
+            ContextMenuStrip = menu,
+            BalloonTipIcon = Forms.ToolTipIcon.None
         };
 
         _notifyIcon.DoubleClick += (_, _) => ShowWindow();
@@ -32,8 +36,11 @@ public sealed class TrayIconService : IDisposable
 
     public void ShowBalloon(string title, string message)
     {
+        _notifyIcon.Icon = _trayIcon;
+        _notifyIcon.Visible = true;
         _notifyIcon.BalloonTipTitle = title;
         _notifyIcon.BalloonTipText = message;
+        _notifyIcon.BalloonTipIcon = Forms.ToolTipIcon.None;
         _notifyIcon.ShowBalloonTip(2500);
     }
 
@@ -58,8 +65,8 @@ public sealed class TrayIconService : IDisposable
         }
 
         _notifyIcon.Visible = false;
-        _notifyIcon.Icon?.Dispose();
         _notifyIcon.Dispose();
+        _trayIcon.Dispose();
         _isDisposed = true;
     }
 }
