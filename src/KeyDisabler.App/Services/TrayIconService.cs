@@ -26,22 +26,33 @@ public sealed class TrayIconService : IDisposable
         {
             Text = "Key Disabler",
             Icon = _trayIcon,
-            Visible = true,
             ContextMenuStrip = menu,
             BalloonTipIcon = Forms.ToolTipIcon.None
         };
 
         _notifyIcon.DoubleClick += (_, _) => ShowWindow();
+        RefreshNotificationIcon();
     }
 
     public void ShowBalloon(string title, string message)
     {
-        _notifyIcon.Icon = _trayIcon;
-        _notifyIcon.Visible = true;
+        RefreshNotificationIcon();
         _notifyIcon.BalloonTipTitle = title;
         _notifyIcon.BalloonTipText = message;
         _notifyIcon.BalloonTipIcon = Forms.ToolTipIcon.None;
         _notifyIcon.ShowBalloonTip(2500);
+    }
+
+    private void RefreshNotificationIcon()
+    {
+        if (_isDisposed)
+        {
+            return;
+        }
+
+        _notifyIcon.Visible = false;
+        _notifyIcon.Icon = _trayIcon;
+        _notifyIcon.Visible = true;
     }
 
     private void ShowWindow()
