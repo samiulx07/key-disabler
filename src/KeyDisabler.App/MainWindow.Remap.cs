@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Threading;
 using KeyDisabler.App.Models;
+using KeyDisabler.App.Services;
 
 namespace KeyDisabler.App;
 
