@@ -778,12 +778,12 @@ public partial class MainWindow : Window
         {
             try
             {
-                File.Copy(_settingsService.SettingsPath, dialog.FileName, true);
+                System.IO.File.Copy(_settingsService.SettingsPath, dialog.FileName, true);
                 UpdateStatus("Settings exported successfully");
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Failed to export settings: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                System.Windows.MessageBox.Show($"Failed to export settings: {ex.Message}", "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
             }
         }
     }
@@ -801,7 +801,7 @@ public partial class MainWindow : Window
         {
             try
             {
-                File.Copy(dialog.FileName, _settingsService.SettingsPath, true);
+                System.IO.File.Copy(dialog.FileName, _settingsService.SettingsPath, true);
                 
                 // Reload settings
                 _settings = _settingsService.Load();
@@ -842,7 +842,7 @@ public partial class MainWindow : Window
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Failed to import settings: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                System.Windows.MessageBox.Show($"Failed to import settings: {ex.Message}", "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
             }
         }
     }
