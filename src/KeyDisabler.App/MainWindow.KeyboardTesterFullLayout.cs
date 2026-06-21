@@ -68,13 +68,13 @@ public partial class MainWindow
             return;
         }
 
-        var root = FindAncestorLocal<WpfBorder>(combo);
+        var root = FindKeyboardLayoutAncestor<WpfBorder>(combo);
         if (root is null)
         {
             return;
         }
 
-        foreach (var textBlock in FindVisualChildrenLocal<WpfTextBlock>(root))
+        foreach (var textBlock in FindKeyboardLayoutChildren<WpfTextBlock>(root))
         {
             if (string.Equals(textBlock.Text, "Keyboard Tester", StringComparison.OrdinalIgnoreCase) ||
                 textBlock.Text.StartsWith("Select a keyboard, start testing", StringComparison.OrdinalIgnoreCase))
@@ -92,13 +92,13 @@ public partial class MainWindow
             return;
         }
 
-        var historyBorder = FindAncestorLocal<WpfBorder>(historyList);
+        var historyBorder = FindKeyboardLayoutAncestor<WpfBorder>(historyList);
         if (historyBorder is not null)
         {
             historyBorder.Visibility = Visibility.Collapsed;
         }
 
-        var parentGrid = historyBorder is null ? null : FindAncestorLocal<WpfGrid>(historyBorder);
+        var parentGrid = historyBorder is null ? null : FindKeyboardLayoutAncestor<WpfGrid>(historyBorder);
         if (parentGrid?.ColumnDefinitions.Count >= 2)
         {
             parentGrid.ColumnDefinitions[0].Width = new GridLength(1, GridUnitType.Star);
@@ -209,7 +209,7 @@ public partial class MainWindow
         return new FullKeyboardItem(string.Empty, 0, false, width, true);
     }
 
-    private static T? FindAncestorLocal<T>(DependencyObject start) where T : DependencyObject
+    private static T? FindKeyboardLayoutAncestor<T>(DependencyObject start) where T : DependencyObject
     {
         var current = VisualTreeHelper.GetParent(start);
         while (current is not null)
@@ -225,7 +225,7 @@ public partial class MainWindow
         return null;
     }
 
-    private static IEnumerable<T> FindVisualChildrenLocal<T>(DependencyObject root) where T : DependencyObject
+    private static IEnumerable<T> FindKeyboardLayoutChildren<T>(DependencyObject root) where T : DependencyObject
     {
         var count = VisualTreeHelper.GetChildrenCount(root);
         for (var i = 0; i < count; i++)
@@ -236,7 +236,7 @@ public partial class MainWindow
                 yield return typedChild;
             }
 
-            foreach (var descendant in FindVisualChildrenLocal<T>(child))
+            foreach (var descendant in FindKeyboardLayoutChildren<T>(child))
             {
                 yield return descendant;
             }
