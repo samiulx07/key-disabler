@@ -2,10 +2,10 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Key Disabler"
-        Width="1040"
-        Height="720"
-        MinWidth="900"
-        MinHeight="600"
+        Width="1100"
+        Height="760"
+        MinWidth="940"
+        MinHeight="650"
         Background="{DynamicResource WindowBackground}"
         Loaded="Window_Loaded"
         Closing="Window_Closing">
@@ -25,7 +25,7 @@
 
                 <StackPanel>
                     <TextBlock Text="Key Disabler" FontSize="30" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" />
-                    <TextBlock Text="Disable captured keys on a selected keyboard. Mouse devices are never rule targets."
+                    <TextBlock Text="Block broken keys and remap healthy keys on a selected physical keyboard. Mouse devices are never rule targets."
                                Foreground="{DynamicResource TextMuted}"
                                Margin="0,6,0,0" />
                 </StackPanel>
@@ -47,7 +47,7 @@
                     <Border Background="{DynamicResource CardBackground}" CornerRadius="18" Padding="22" Margin="0,0,12,0">
                         <StackPanel>
                             <TextBlock Text="Current keyboard event" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" />
-                            <TextBlock Text="Click 'Start Detect Keys' to begin monitoring key presses. The app will show which keyboard produced the key and whether it was blocked."
+                            <TextBlock Text="Click 'Start Detect Keys' to monitor key presses. The app will show which keyboard produced the key and whether it was blocked."
                                        TextWrapping="Wrap"
                                        Foreground="{DynamicResource TextMuted}"
                                        Margin="0,8,0,16" />
@@ -62,7 +62,7 @@
                                 </StackPanel>
                             </Border>
 
-                            <TextBlock Text="Use Capture Key to block any keyboard button, not only Space or Enter. Saved rules are restored only when the app is running."
+                            <TextBlock Text="For a shorted Spacebar: add a block rule for Space, then add a remap rule from Right Alt to Space."
                                        TextWrapping="Wrap"
                                        Foreground="{DynamicResource TextSuccess}"
                                        Margin="0,18,0,0" />
@@ -72,7 +72,7 @@
                     <Border Grid.Column="1" Background="{DynamicResource CardBackground}" CornerRadius="18" Padding="22" Margin="12,0,0,0">
                         <StackPanel>
                             <TextBlock Text="Saved protection" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" />
-                            <TextBlock x:Name="RuleCountText" Text="0 key rules, 0 disabled keyboards" Foreground="{DynamicResource TextMuted}" Margin="0,8,0,16" />
+                            <TextBlock x:Name="RuleCountText" Text="0 block rules, 0 remap rules, 0 disabled keyboards" Foreground="{DynamicResource TextMuted}" Margin="0,8,0,16" />
                             <Button Content="Open Rules Tab" Click="OpenRulesTab_Click" Margin="0,0,0,8" />
                             <Button Content="Open Keyboards Tab" Click="OpenKeyboardsTab_Click" />
                         </StackPanel>
@@ -155,47 +155,118 @@
             <TabItem Header="Rules" x:Name="RulesTab">
                 <Grid Margin="0,12,0,0">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="0.9*" />
-                        <ColumnDefinition Width="1.1*" />
+                        <ColumnDefinition Width="0.95*" />
+                        <ColumnDefinition Width="1.05*" />
                     </Grid.ColumnDefinitions>
 
                     <Border Background="{DynamicResource CardBackground}" CornerRadius="18" Padding="22" Margin="0,0,12,0">
-                        <StackPanel>
-                            <TextBlock Text="Create key rule" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" />
-                            <TextBlock Text="Choose a keyboard, then capture any key/button from that keyboard. Only that captured key on that selected physical keyboard will be blocked."
-                                       TextWrapping="Wrap"
-                                       Foreground="{DynamicResource TextMuted}"
-                                       Margin="0,8,0,16" />
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <StackPanel>
+                                <TextBlock Text="Block broken key" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" />
+                                <TextBlock Text="Choose a keyboard, then capture/select the key that should be blocked. Use this for your shorted physical Spacebar."
+                                           TextWrapping="Wrap"
+                                           Foreground="{DynamicResource TextMuted}"
+                                           Margin="0,8,0,16" />
 
-                            <TextBlock Text="Keyboard" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" />
-                            <ComboBox x:Name="RuleDeviceCombo" DisplayMemberPath="DisplayName" />
+                                <TextBlock Text="Keyboard" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" />
+                                <ComboBox x:Name="RuleDeviceCombo" DisplayMemberPath="DisplayName" />
 
-                            <TextBlock Text="Key" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" Margin="0,10,0,0" />
-                            <ComboBox x:Name="KeyCombo" DisplayMemberPath="Name" />
-                            <TextBlock x:Name="CapturedKeyText" Text="No captured key yet" Foreground="{DynamicResource TextMuted}" Margin="0,6,0,0" TextWrapping="Wrap" />
+                                <TextBlock Text="Key to block" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" Margin="0,10,0,0" />
+                                <ComboBox x:Name="KeyCombo" DisplayMemberPath="Name" />
+                                <TextBlock x:Name="CapturedKeyText" Text="No captured key yet" Foreground="{DynamicResource TextMuted}" Margin="0,6,0,0" TextWrapping="Wrap" />
 
-                            <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
-                                <Button Content="Capture Key" Click="CaptureRuleKey_Click" Margin="0,0,8,0" />
-                                <Button Content="Add Key Rule" Click="AddRule_Click" Margin="0,0,8,0" />
-                                <Button Content="Remove Selected" Click="RemoveRule_Click" />
+                                <StackPanel Orientation="Horizontal" Margin="0,12,0,18">
+                                    <Button Content="Capture Key" Click="CaptureRuleKey_Click" Margin="0,0,8,0" />
+                                    <Button Content="Add Block Rule" Click="AddRule_Click" Margin="0,0,8,0" />
+                                    <Button Content="Remove Selected" Click="RemoveRule_Click" />
+                                </StackPanel>
+
+                                <Border Height="1" Background="{DynamicResource BorderBrush}" Margin="0,2,0,20" />
+
+                                <TextBlock Text="Remap healthy key" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" />
+                                <TextBlock Text="Map a healthy physical key to another key. For your issue, Right Alt should become Space while the broken Spacebar stays blocked."
+                                           TextWrapping="Wrap"
+                                           Foreground="{DynamicResource TextMuted}"
+                                           Margin="0,8,0,16" />
+
+                                <TextBlock Text="Keyboard" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" />
+                                <ComboBox x:Name="RemapDeviceCombo" DisplayMemberPath="DisplayName" />
+
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="16" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="From physical key" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" />
+                                        <ComboBox x:Name="RemapFromKeyCombo" DisplayMemberPath="Name" />
+                                        <TextBlock x:Name="RemapFromCapturedText" Text="From: not captured" Foreground="{DynamicResource TextMuted}" Margin="0,0,0,8" TextWrapping="Wrap" />
+                                    </StackPanel>
+
+                                    <StackPanel Grid.Column="2">
+                                        <TextBlock Text="To output key" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" />
+                                        <ComboBox x:Name="RemapToKeyCombo" DisplayMemberPath="Name" />
+                                        <TextBlock x:Name="RemapToCapturedText" Text="To: not captured" Foreground="{DynamicResource TextMuted}" Margin="0,0,0,8" TextWrapping="Wrap" />
+                                    </StackPanel>
+                                </Grid>
+
+                                <StackPanel Orientation="Horizontal" Margin="0,8,0,10">
+                                    <Button Content="Capture From" Click="CaptureRemapFromKey_Click" Margin="0,0,8,0" />
+                                    <Button Content="Capture To" Click="CaptureRemapToKey_Click" Margin="0,0,8,0" />
+                                    <Button Content="Add Remap Rule" Click="AddRemapRule_Click" />
+                                </StackPanel>
+
+                                <Border Background="{DynamicResource InfoBackground}" BorderBrush="{DynamicResource InfoBorder}" BorderThickness="1" CornerRadius="12" Padding="14" Margin="0,8,0,0">
+                                    <StackPanel>
+                                        <TextBlock Text="Quick preset for shorted Spacebar" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" />
+                                        <TextBlock Text="Creates: Block Space + Remap Right Alt to Space on the selected keyboard."
+                                                   Foreground="{DynamicResource TextMuted}"
+                                                   TextWrapping="Wrap"
+                                                   Margin="0,4,0,10" />
+                                        <Button Content="Fix Broken Spacebar" Click="FixBrokenSpacebar_Click" Padding="16,10" FontWeight="SemiBold" />
+                                    </StackPanel>
+                                </Border>
                             </StackPanel>
-                        </StackPanel>
+                        </ScrollViewer>
                     </Border>
 
                     <Border Grid.Column="1" Background="{DynamicResource CardBackground}" CornerRadius="18" Padding="22" Margin="12,0,0,0">
-                        <DockPanel>
-                            <TextBlock DockPanel.Dock="Top" Text="Saved key rules" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,14" />
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
 
-                            <ListView x:Name="RulesList">
+                            <TextBlock Grid.Row="0" Text="Saved block rules" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,14" />
+                            <ListView Grid.Row="1" x:Name="RulesList" Margin="0,0,0,18">
                                 <ListView.View>
                                     <GridView>
                                         <GridViewColumn Header="Keyboard" DisplayMemberBinding="{Binding DeviceName}" Width="220" />
-                                        <GridViewColumn Header="Key" DisplayMemberBinding="{Binding KeyName}" Width="130" />
-                                        <GridViewColumn Header="Enabled" DisplayMemberBinding="{Binding IsEnabled}" Width="90" />
+                                        <GridViewColumn Header="Blocked key" DisplayMemberBinding="{Binding KeyName}" Width="130" />
+                                        <GridViewColumn Header="Enabled" DisplayMemberBinding="{Binding IsEnabled}" Width="80" />
                                     </GridView>
                                 </ListView.View>
                             </ListView>
-                        </DockPanel>
+
+                            <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,0,0,14">
+                                <TextBlock Text="Saved remap rules" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center" />
+                                <Button Content="Remove Selected Remap" Click="RemoveRemapRule_Click" Margin="16,0,0,0" />
+                            </StackPanel>
+                            <ListView Grid.Row="3" x:Name="RemapRulesList">
+                                <ListView.View>
+                                    <GridView>
+                                        <GridViewColumn Header="Keyboard" DisplayMemberBinding="{Binding DeviceName}" Width="190" />
+                                        <GridViewColumn Header="From" DisplayMemberBinding="{Binding FromKeyName}" Width="110" />
+                                        <GridViewColumn Header="To" DisplayMemberBinding="{Binding ToKeyName}" Width="110" />
+                                        <GridViewColumn Header="Enabled" DisplayMemberBinding="{Binding IsEnabled}" Width="80" />
+                                    </GridView>
+                                </ListView.View>
+                            </ListView>
+                        </Grid>
                     </Border>
                 </Grid>
             </TabItem>
@@ -282,5 +353,3 @@
         <TextBlock Grid.Row="2" x:Name="FooterText" Text="Ready" Foreground="{DynamicResource TextMuted}" Margin="4,16,0,0" />
     </Grid>
 </Window>
-
-
