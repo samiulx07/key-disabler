@@ -49,7 +49,7 @@ public static class ThemeService
             var dict = new ResourceDictionary { Source = uri };
             
             // Remove existing theme dictionaries
-            var appResources = Application.Current.Resources.MergedDictionaries;
+            var appResources = System.Windows.Application.Current.Resources.MergedDictionaries;
             var oldTheme = appResources.FirstOrDefault(d => d.Source != null && d.Source.OriginalString.Contains("Theme.xaml"));
             
             if (oldTheme != null)
