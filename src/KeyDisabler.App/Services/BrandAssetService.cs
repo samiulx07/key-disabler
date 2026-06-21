@@ -17,22 +17,15 @@ public static class BrandAssetService
     {
         try
         {
-            // Prefer the PNG icon, convert it to an Icon for the tray
-            var pngPath = BuildAssetPath(AppIconPngPath);
-            if (File.Exists(pngPath))
+            var exePath = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName;
+            if (!string.IsNullOrEmpty(exePath))
             {
-                using var bitmap = new Bitmap(pngPath);
-                var hIcon = bitmap.GetHicon();
-                return Icon.FromHandle(hIcon);
+                var icon = Icon.ExtractAssociatedIcon(exePath);
+                if (icon != null)
+                {
+                    return icon;
+                }
             }
-
-            // Fall back to .ico
-            var icoPath = BuildAssetPath(AppIconIcoPath);
-            if (File.Exists(icoPath))
-            {
-                return new Icon(icoPath);
-            }
-
             return SystemIcons.Application;
         }
         catch
@@ -45,22 +38,10 @@ public static class BrandAssetService
     {
         try
         {
-            // Prefer the PNG icon for window title bar
-            var pngPath = BuildAssetPath(AppIconPngPath);
-            if (File.Exists(pngPath))
-            {
-                var image = new BitmapImage();
-                image.BeginInit();
-                image.CacheOption = BitmapCacheOption.OnLoad;
-                image.UriSource = new Uri(pngPath, UriKind.Absolute);
-                image.EndInit();
-                image.Freeze();
-                return image;
-            }
-
-            // Fall back to .ico
             using var icon = LoadTrayIconOrDefault();
-            return Imaging.CreateBitmapSourceFromHIcon(icon.Handle, Int32Rect.Empty, BitmapSizeOptions.FromWidthAndHeight(256, 256));
+            if (icon == SystemIcons.Application)
+                return null;
+            return Imaging.CreateBitmapSourceFromHIcon(icon.Handle, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
         }
         catch
         {
