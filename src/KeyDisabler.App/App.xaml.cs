@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Threading;
 using KeyDisabler.App.Services;
@@ -6,12 +7,15 @@ namespace KeyDisabler.App;
 
 public partial class App : System.Windows.Application
 {
+    private const string AppUserModelId = "Samslab.KeyDisabler";
+
     private SingleInstanceService? _singleInstanceService;
 
     protected override void OnStartup(System.Windows.StartupEventArgs e)
     {
         DispatcherUnhandledException += App_DispatcherUnhandledException;
         AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
+        ApplyWindowsAppIdentity();
 
         try
         {
@@ -76,4 +80,19 @@ public partial class App : System.Windows.Application
         _singleInstanceService?.Dispose();
         base.OnExit(e);
     }
+
+    private static void ApplyWindowsAppIdentity()
+    {
+        try
+        {
+            SetCurrentProcessExplicitAppUserModelID(AppUserModelId);
+        }
+        catch
+        {
+            // Non-fatal. The tray icon still works if Windows refuses the explicit identity.
+        }
+    }
+
+    [DllImport("shell32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    private static extern int SetCurrentProcessExplicitAppUserModelID(string appId);
 }
