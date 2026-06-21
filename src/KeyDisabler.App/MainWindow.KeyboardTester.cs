@@ -6,6 +6,11 @@ using System.Windows.Controls;
 using System.Windows.Threading;
 using KeyDisabler.App.Models;
 using KeyDisabler.App.Services;
+using WpfButton = System.Windows.Controls.Button;
+using WpfComboBox = System.Windows.Controls.ComboBox;
+using WpfControl = System.Windows.Controls.Control;
+using WpfListView = System.Windows.Controls.ListView;
+using WpfOrientation = System.Windows.Controls.Orientation;
 
 namespace KeyDisabler.App;
 
@@ -34,18 +39,18 @@ internal static class MainWindowKeyboardTesterBootstrap
 public partial class MainWindow
 {
     private readonly ObservableCollection<KeyboardTestHistoryItem> _keyboardTestHistory = new();
-    private readonly Dictionary<string, Button> _keyboardTesterButtons = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, WpfButton> _keyboardTesterButtons = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, string> _keyboardTesterStates = new(StringComparer.OrdinalIgnoreCase);
 
-    private ComboBox? _testerKeyboardCombo;
+    private WpfComboBox? _testerKeyboardCombo;
     private TextBlock? _testerSelectedKeyboardText;
     private TextBlock? _testerDropdownHintText;
-    private Button? _toggleKeyboardTesterButton;
-    private Button? _resetKeyboardTesterButton;
+    private WpfButton? _toggleKeyboardTesterButton;
+    private WpfButton? _resetKeyboardTesterButton;
     private TextBlock? _testerLastKeyText;
     private TextBlock? _testerCountText;
     private StackPanel? _keyboardTesterLayoutPanel;
-    private ListView? _testerHistoryList;
+    private WpfListView? _testerHistoryList;
 
     private bool _keyboardTesterInitialized;
     private bool _isKeyboardTesting;
@@ -57,15 +62,15 @@ public partial class MainWindow
             return;
         }
 
-        _testerKeyboardCombo = FindName("TesterKeyboardCombo") as ComboBox;
+        _testerKeyboardCombo = FindName("TesterKeyboardCombo") as WpfComboBox;
         _testerSelectedKeyboardText = FindName("TesterSelectedKeyboardText") as TextBlock;
         _testerDropdownHintText = FindName("TesterDropdownHintText") as TextBlock;
-        _toggleKeyboardTesterButton = FindName("ToggleKeyboardTesterButton") as Button;
-        _resetKeyboardTesterButton = FindName("ResetKeyboardTesterButton") as Button;
+        _toggleKeyboardTesterButton = FindName("ToggleKeyboardTesterButton") as WpfButton;
+        _resetKeyboardTesterButton = FindName("ResetKeyboardTesterButton") as WpfButton;
         _testerLastKeyText = FindName("TesterLastKeyText") as TextBlock;
         _testerCountText = FindName("TesterCountText") as TextBlock;
         _keyboardTesterLayoutPanel = FindName("KeyboardTesterLayoutPanel") as StackPanel;
-        _testerHistoryList = FindName("TesterHistoryList") as ListView;
+        _testerHistoryList = FindName("TesterHistoryList") as WpfListView;
 
         if (_keyboardTesterLayoutPanel is null)
         {
@@ -375,13 +380,13 @@ public partial class MainWindow
 
         var row = new StackPanel
         {
-            Orientation = Orientation.Horizontal,
+            Orientation = WpfOrientation.Horizontal,
             Margin = new Thickness(0, 0, 0, 8)
         };
 
         foreach (var key in keys)
         {
-            var button = new Button
+            var button = new WpfButton
             {
                 Content = key.Label,
                 Width = key.Width,
@@ -403,33 +408,33 @@ public partial class MainWindow
         _keyboardTesterLayoutPanel.Children.Add(row);
     }
 
-    private void ApplyTesterButtonState(Button button, string state)
+    private void ApplyTesterButtonState(WpfButton button, string state)
     {
         switch (state)
         {
             case "Pressed":
-                button.SetResourceReference(Control.BackgroundProperty, "PrimaryBrush");
+                button.SetResourceReference(WpfControl.BackgroundProperty, "PrimaryBrush");
                 button.Foreground = System.Windows.Media.Brushes.White;
                 break;
             case "Blocked":
-                button.SetResourceReference(Control.BackgroundProperty, "WarningBackground");
-                button.SetResourceReference(Control.ForegroundProperty, "WarningText");
+                button.SetResourceReference(WpfControl.BackgroundProperty, "WarningBackground");
+                button.SetResourceReference(WpfControl.ForegroundProperty, "WarningText");
                 break;
             case "Remapped":
-                button.SetResourceReference(Control.BackgroundProperty, "InfoBackground");
-                button.SetResourceReference(Control.ForegroundProperty, "PrimaryBrush");
+                button.SetResourceReference(WpfControl.BackgroundProperty, "InfoBackground");
+                button.SetResourceReference(WpfControl.ForegroundProperty, "PrimaryBrush");
                 break;
             case "Tested":
-                button.SetResourceReference(Control.BackgroundProperty, "PrimarySoftBrush");
-                button.SetResourceReference(Control.ForegroundProperty, "TextPrimary");
+                button.SetResourceReference(WpfControl.BackgroundProperty, "PrimarySoftBrush");
+                button.SetResourceReference(WpfControl.ForegroundProperty, "TextPrimary");
                 break;
             default:
-                button.SetResourceReference(Control.BackgroundProperty, "PanelBackground");
-                button.SetResourceReference(Control.ForegroundProperty, "TextPrimary");
+                button.SetResourceReference(WpfControl.BackgroundProperty, "PanelBackground");
+                button.SetResourceReference(WpfControl.ForegroundProperty, "TextPrimary");
                 break;
         }
 
-        button.SetResourceReference(Control.BorderBrushProperty, "BorderBrush");
+        button.SetResourceReference(WpfControl.BorderBrushProperty, "BorderBrush");
     }
 
     private static TesterKeyDefinition TesterKey(string label, ushort scanCode, bool isExtendedKey = false, double width = 48)
