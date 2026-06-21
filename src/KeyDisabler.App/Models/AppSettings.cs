@@ -13,5 +13,6 @@ public sealed class AppSettings
     public bool MinimizeToTray { get; set; } = true;
     public AppThemeMode Theme { get; set; } = AppThemeMode.System;
     public List<KeyboardRule> Rules { get; set; } = new();
+    public List<KeyRemapRule> RemapRules { get; set; } = new();
     public List<DisabledKeyboardRule> DisabledKeyboards { get; set; } = new();
 }
