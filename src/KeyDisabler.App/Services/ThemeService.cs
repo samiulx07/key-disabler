@@ -9,7 +9,7 @@ public static class ThemeService
     private const string RegistryKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize";
     private const string RegistryValueName = "AppsUseLightTheme";
 
-    public static void Initialize(ThemeMode initialTheme)
+    public static void Initialize(AppThemeMode initialTheme)
     {
         SystemEvents.UserPreferenceChanged += (s, e) =>
         {
@@ -24,15 +24,15 @@ public static class ThemeService
         ApplyTheme(initialTheme);
     }
 
-    public static void ApplyTheme(ThemeMode themeMode)
+    public static void ApplyTheme(AppThemeMode themeMode)
     {
         bool useDarkTheme = false;
 
-        if (themeMode == ThemeMode.Dark)
+        if (themeMode == AppThemeMode.Dark)
         {
             useDarkTheme = true;
         }
-        else if (themeMode == ThemeMode.Light)
+        else if (themeMode == AppThemeMode.Light)
         {
             useDarkTheme = false;
         }

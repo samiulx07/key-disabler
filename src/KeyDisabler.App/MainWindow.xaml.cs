@@ -73,9 +73,9 @@ public partial class MainWindow : Window
         ThemeService.Initialize(_settings.Theme);
         ThemeComboBox.SelectedIndex = _settings.Theme switch
         {
-            ThemeMode.System => 0,
-            ThemeMode.Light => 1,
-            ThemeMode.Dark => 2,
+            AppThemeMode.System => 0,
+            AppThemeMode.Light => 1,
+            AppThemeMode.Dark => 2,
             _ => 0
         };
 
@@ -386,9 +386,9 @@ public partial class MainWindow : Window
         var tag = item.Tag?.ToString();
         var mode = tag switch
         {
-            "Light" => ThemeMode.Light,
-            "Dark" => ThemeMode.Dark,
-            _ => ThemeMode.System
+            "Light" => AppThemeMode.Light,
+            "Dark" => AppThemeMode.Dark,
+            _ => AppThemeMode.System
         };
 
         if (_settings.Theme != mode)
