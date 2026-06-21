@@ -3,25 +3,35 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              ShutdownMode="OnExplicitShutdown">
     <Application.Resources>
-        <SolidColorBrush x:Key="PrimaryBrush" Color="#2563EB" />
-        <SolidColorBrush x:Key="TextBrush" Color="#111827" />
-        <SolidColorBrush x:Key="MutedBrush" Color="#6B7280" />
-        <SolidColorBrush x:Key="PanelBrush" Color="#F8FAFC" />
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/KeyDisabler.App;component/Themes/LightTheme.xaml" />
+            </ResourceDictionary.MergedDictionaries>
 
-        <Style TargetType="Button">
-            <Setter Property="Padding" Value="14,8" />
-            <Setter Property="Margin" Value="0,0,8,0" />
-            <Setter Property="Cursor" Value="Hand" />
-        </Style>
+            <Style TargetType="Button">
+                <Setter Property="Padding" Value="14,8" />
+                <Setter Property="Margin" Value="0,0,8,0" />
+                <Setter Property="Cursor" Value="Hand" />
+                <Setter Property="Background" Value="{DynamicResource CardBackground}" />
+                <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+                <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+            </Style>
 
-        <Style TargetType="TextBox">
-            <Setter Property="Padding" Value="8" />
-            <Setter Property="Margin" Value="0,4,0,12" />
-        </Style>
+            <Style TargetType="TextBox">
+                <Setter Property="Padding" Value="8" />
+                <Setter Property="Margin" Value="0,4,0,12" />
+                <Setter Property="Background" Value="{DynamicResource TextBoxBackground}" />
+                <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+                <Setter Property="BorderBrush" Value="{DynamicResource TextBoxBorder}" />
+            </Style>
 
-        <Style TargetType="ComboBox">
-            <Setter Property="Padding" Value="8" />
-            <Setter Property="Margin" Value="0,4,0,12" />
-        </Style>
+            <Style TargetType="ComboBox">
+                <Setter Property="Padding" Value="8" />
+                <Setter Property="Margin" Value="0,4,0,12" />
+                <Setter Property="Background" Value="{DynamicResource TextBoxBackground}" />
+                <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+                <Setter Property="BorderBrush" Value="{DynamicResource TextBoxBorder}" />
+            </Style>
+        </ResourceDictionary>
     </Application.Resources>
 </Application>

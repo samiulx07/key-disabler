@@ -70,6 +70,15 @@ public partial class MainWindow : Window
         MinimizeToTrayCheck.IsChecked = _settings.MinimizeToTray;
         SettingsPathText.Text = _settingsService.SettingsPath;
 
+        ThemeService.Initialize(_settings.Theme);
+        ThemeComboBox.SelectedIndex = _settings.Theme switch
+        {
+            ThemeMode.System => 0,
+            ThemeMode.Light => 1,
+            ThemeMode.Dark => 2,
+            _ => 0
+        };
+
         _deviceBlockerService.Start();
         RefreshDevices();
         UpdateRuleCount();
@@ -365,6 +374,30 @@ public partial class MainWindow : Window
         SaveSettingsFromUi();
         ApplyStartupSetting(_settings.StartWithWindows);
         UpdateStatus("Settings saved");
+    }
+
+    private void ThemeComboBox_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+    {
+        if (_isLoading || ThemeComboBox.SelectedItem is not System.Windows.Controls.ComboBoxItem item)
+        {
+            return;
+        }
+
+        var tag = item.Tag?.ToString();
+        var mode = tag switch
+        {
+            "Light" => ThemeMode.Light,
+            "Dark" => ThemeMode.Dark,
+            _ => ThemeMode.System
+        };
+
+        if (_settings.Theme != mode)
+        {
+            _settings.Theme = mode;
+            ThemeService.ApplyTheme(mode);
+            _settingsService.Save(_settings);
+            UpdateStatus($"Theme set to {tag}");
+        }
     }
 
     private void Window_Closing(object? sender, CancelEventArgs e)

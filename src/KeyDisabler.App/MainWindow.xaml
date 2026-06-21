@@ -6,7 +6,7 @@
         Height="720"
         MinWidth="900"
         MinHeight="600"
-        Background="#F3F4F6"
+        Background="{DynamicResource WindowBackground}"
         Loaded="Window_Loaded"
         Closing="Window_Closing">
     <Grid Margin="24">
@@ -16,7 +16,7 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <Border Background="White" CornerRadius="18" Padding="22" Margin="0,0,0,16">
+        <Border Background="{DynamicResource CardBackground}" CornerRadius="18" Padding="22" Margin="0,0,0,16">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
@@ -24,14 +24,14 @@
                 </Grid.ColumnDefinitions>
 
                 <StackPanel>
-                    <TextBlock Text="Key Disabler" FontSize="30" FontWeight="Bold" Foreground="#111827" />
+                    <TextBlock Text="Key Disabler" FontSize="30" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" />
                     <TextBlock Text="Disable captured keys on a selected keyboard. Mouse devices are never rule targets."
-                               Foreground="#6B7280"
+                               Foreground="{DynamicResource TextMuted}"
                                Margin="0,6,0,0" />
                 </StackPanel>
 
-                <Border Grid.Column="1" Background="#EFF6FF" BorderBrush="#BFDBFE" BorderThickness="1" CornerRadius="8" Padding="14,8" VerticalAlignment="Center">
-                    <TextBlock x:Name="StatusPill" Text="Ready" Foreground="#1D4ED8" FontWeight="SemiBold" />
+                <Border Grid.Column="1" Background="{DynamicResource InfoBackground}" BorderBrush="{DynamicResource InfoBorder}" BorderThickness="1" CornerRadius="8" Padding="14,8" VerticalAlignment="Center">
+                    <TextBlock x:Name="StatusPill" Text="Ready" Foreground="{DynamicResource PrimaryBrush}" FontWeight="SemiBold" />
                 </Border>
             </Grid>
         </Border>
@@ -44,35 +44,35 @@
                         <ColumnDefinition Width="0.85*" />
                     </Grid.ColumnDefinitions>
 
-                    <Border Background="White" CornerRadius="18" Padding="22" Margin="0,0,12,0">
+                    <Border Background="{DynamicResource CardBackground}" CornerRadius="18" Padding="22" Margin="0,0,12,0">
                         <StackPanel>
-                            <TextBlock Text="Current keyboard event" FontSize="20" FontWeight="SemiBold" Foreground="#111827" />
+                            <TextBlock Text="Current keyboard event" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" />
                             <TextBlock Text="Click 'Start Detect Keys' to begin monitoring key presses. The app will show which keyboard produced the key and whether it was blocked."
                                        TextWrapping="Wrap"
-                                       Foreground="#6B7280"
+                                       Foreground="{DynamicResource TextMuted}"
                                        Margin="0,8,0,16" />
 
                             <Button x:Name="ToggleDetectKeysButton" Content="Start Detect Keys" Click="ToggleDashboardDetection_Click" Margin="0,0,0,16"
                                     Padding="18,10" FontWeight="SemiBold" />
 
-                            <Border Background="#F8FAFC" BorderBrush="#E5E7EB" BorderThickness="1" CornerRadius="14" Padding="18">
+                            <Border Background="{DynamicResource PanelBackground}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="14" Padding="18">
                                 <StackPanel>
-                                    <TextBlock Text="Last detected key" Foreground="#6B7280" />
-                                    <TextBlock x:Name="LastKeyText" Text="Press 'Start Detect Keys' to begin" FontSize="18" FontWeight="SemiBold" Foreground="#111827" Margin="0,6,0,0" TextWrapping="Wrap" />
+                                    <TextBlock Text="Last detected key" Foreground="{DynamicResource TextMuted}" />
+                                    <TextBlock x:Name="LastKeyText" Text="Press 'Start Detect Keys' to begin" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" Margin="0,6,0,0" TextWrapping="Wrap" />
                                 </StackPanel>
                             </Border>
 
                             <TextBlock Text="Use Capture Key to block any keyboard button, not only Space or Enter. Saved rules are restored only when the app is running."
                                        TextWrapping="Wrap"
-                                       Foreground="#065F46"
+                                       Foreground="{DynamicResource TextSuccess}"
                                        Margin="0,18,0,0" />
                         </StackPanel>
                     </Border>
 
-                    <Border Grid.Column="1" Background="White" CornerRadius="18" Padding="22" Margin="12,0,0,0">
+                    <Border Grid.Column="1" Background="{DynamicResource CardBackground}" CornerRadius="18" Padding="22" Margin="12,0,0,0">
                         <StackPanel>
-                            <TextBlock Text="Saved protection" FontSize="20" FontWeight="SemiBold" Foreground="#111827" />
-                            <TextBlock x:Name="RuleCountText" Text="0 key rules, 0 disabled keyboards" Foreground="#6B7280" Margin="0,8,0,16" />
+                            <TextBlock Text="Saved protection" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" />
+                            <TextBlock x:Name="RuleCountText" Text="0 key rules, 0 disabled keyboards" Foreground="{DynamicResource TextMuted}" Margin="0,8,0,16" />
                             <Button Content="Open Rules Tab" Click="OpenRulesTab_Click" Margin="0,0,0,8" />
                             <Button Content="Open Keyboards Tab" Click="OpenKeyboardsTab_Click" />
                         </StackPanel>
@@ -87,13 +87,13 @@
                         <ColumnDefinition Width="1.1*" />
                     </Grid.ColumnDefinitions>
 
-                    <Border Background="White" CornerRadius="18" Padding="22" Margin="0,0,12,0">
+                    <Border Background="{DynamicResource CardBackground}" CornerRadius="18" Padding="22" Margin="0,0,12,0">
                         <DockPanel>
                             <StackPanel DockPanel.Dock="Top">
-                                <TextBlock Text="Connected keyboards" FontSize="20" FontWeight="SemiBold" Foreground="#111827" />
+                                <TextBlock Text="Connected keyboards" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" />
                                 <TextBlock Text="Select the laptop keyboard or use detection mode to identify it by pressing a key. Refresh performs a hard driver scan."
                                            TextWrapping="Wrap"
-                                           Foreground="#6B7280"
+                                           Foreground="{DynamicResource TextMuted}"
                                            Margin="0,8,0,12" />
 
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
@@ -106,7 +106,7 @@
                         </DockPanel>
                     </Border>
 
-                    <Border Grid.Column="1" Background="White" CornerRadius="18" Padding="22" Margin="12,0,0,0">
+                    <Border Grid.Column="1" Background="{DynamicResource CardBackground}" CornerRadius="18" Padding="22" Margin="12,0,0,0">
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
@@ -115,13 +115,13 @@
                             </Grid.RowDefinitions>
 
                             <StackPanel Grid.Row="0">
-                                <TextBlock Text="Selected keyboard" FontSize="20" FontWeight="SemiBold" Foreground="#111827" />
-                                <TextBlock x:Name="SelectedDeviceText" Text="No keyboard selected" TextWrapping="Wrap" Foreground="#6B7280" Margin="0,8,0,10" />
+                                <TextBlock Text="Selected keyboard" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" />
+                                <TextBlock x:Name="SelectedDeviceText" Text="No keyboard selected" TextWrapping="Wrap" Foreground="{DynamicResource TextMuted}" Margin="0,8,0,10" />
 
-                                <TextBlock Text="Keyboard status" FontWeight="SemiBold" Foreground="#374151" />
-                                <TextBlock x:Name="SelectedDeviceStatusText" Text="Status: not selected" Foreground="#6B7280" Margin="0,4,0,12" />
+                                <TextBlock Text="Keyboard status" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" />
+                                <TextBlock x:Name="SelectedDeviceStatusText" Text="Status: not selected" Foreground="{DynamicResource TextMuted}" Margin="0,4,0,12" />
 
-                                <TextBlock Text="Device path" FontWeight="SemiBold" Foreground="#374151" />
+                                <TextBlock Text="Device path" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" />
                                 <TextBox x:Name="DevicePathText" IsReadOnly="True" TextWrapping="Wrap" Margin="0,4,0,12" />
 
                                 <StackPanel Orientation="Horizontal" Margin="0,4,0,18">
@@ -130,14 +130,14 @@
                                 </StackPanel>
                             </StackPanel>
 
-                            <Border Grid.Row="1" Background="#FEF2F2" BorderBrush="#FECACA" BorderThickness="1" CornerRadius="12" Padding="12" Margin="0,0,0,14">
+                            <Border Grid.Row="1" Background="{DynamicResource WarningBackground}" BorderBrush="{DynamicResource WarningBorder}" BorderThickness="1" CornerRadius="12" Padding="12" Margin="0,0,0,14">
                                 <TextBlock Text="Safety: mouse devices are not selectable. The app also blocks disabling the last enabled detected keyboard."
-                                           Foreground="#991B1B"
+                                           Foreground="{DynamicResource WarningText}"
                                            TextWrapping="Wrap" />
                             </Border>
 
                             <DockPanel Grid.Row="2">
-                                <TextBlock DockPanel.Dock="Top" Text="Fully disabled keyboards" FontSize="18" FontWeight="SemiBold" Foreground="#111827" Margin="0,0,0,10" />
+                                <TextBlock DockPanel.Dock="Top" Text="Fully disabled keyboards" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,10" />
                                 <ListView x:Name="DisabledKeyboardsList">
                                     <ListView.View>
                                         <GridView>
@@ -159,20 +159,20 @@
                         <ColumnDefinition Width="1.1*" />
                     </Grid.ColumnDefinitions>
 
-                    <Border Background="White" CornerRadius="18" Padding="22" Margin="0,0,12,0">
+                    <Border Background="{DynamicResource CardBackground}" CornerRadius="18" Padding="22" Margin="0,0,12,0">
                         <StackPanel>
-                            <TextBlock Text="Create key rule" FontSize="20" FontWeight="SemiBold" Foreground="#111827" />
+                            <TextBlock Text="Create key rule" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" />
                             <TextBlock Text="Choose a keyboard, then capture any key/button from that keyboard. Only that captured key on that selected physical keyboard will be blocked."
                                        TextWrapping="Wrap"
-                                       Foreground="#6B7280"
+                                       Foreground="{DynamicResource TextMuted}"
                                        Margin="0,8,0,16" />
 
-                            <TextBlock Text="Keyboard" FontWeight="SemiBold" Foreground="#374151" />
+                            <TextBlock Text="Keyboard" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" />
                             <ComboBox x:Name="RuleDeviceCombo" DisplayMemberPath="DisplayName" />
 
-                            <TextBlock Text="Key" FontWeight="SemiBold" Foreground="#374151" Margin="0,10,0,0" />
+                            <TextBlock Text="Key" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" Margin="0,10,0,0" />
                             <ComboBox x:Name="KeyCombo" DisplayMemberPath="Name" />
-                            <TextBlock x:Name="CapturedKeyText" Text="No captured key yet" Foreground="#6B7280" Margin="0,6,0,0" TextWrapping="Wrap" />
+                            <TextBlock x:Name="CapturedKeyText" Text="No captured key yet" Foreground="{DynamicResource TextMuted}" Margin="0,6,0,0" TextWrapping="Wrap" />
 
                             <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
                                 <Button Content="Capture Key" Click="CaptureRuleKey_Click" Margin="0,0,8,0" />
@@ -182,9 +182,9 @@
                         </StackPanel>
                     </Border>
 
-                    <Border Grid.Column="1" Background="White" CornerRadius="18" Padding="22" Margin="12,0,0,0">
+                    <Border Grid.Column="1" Background="{DynamicResource CardBackground}" CornerRadius="18" Padding="22" Margin="12,0,0,0">
                         <DockPanel>
-                            <TextBlock DockPanel.Dock="Top" Text="Saved key rules" FontSize="20" FontWeight="SemiBold" Foreground="#111827" Margin="0,0,0,14" />
+                            <TextBlock DockPanel.Dock="Top" Text="Saved key rules" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,14" />
 
                             <ListView x:Name="RulesList">
                                 <ListView.View>
@@ -201,27 +201,34 @@
             </TabItem>
 
             <TabItem Header="Settings">
-                <Border Background="White" CornerRadius="18" Padding="22" Margin="0,12,0,0">
+                <Border Background="{DynamicResource CardBackground}" CornerRadius="18" Padding="22" Margin="0,12,0,0">
                     <StackPanel>
-                        <TextBlock Text="Application settings" FontSize="20" FontWeight="SemiBold" Foreground="#111827" />
+                        <TextBlock Text="Application settings" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" />
                         <TextBlock Text="These settings are stored in your Windows AppData folder. Enable Start with Windows only after confirming your rules work safely."
-                                   Foreground="#6B7280"
+                                   Foreground="{DynamicResource TextMuted}"
                                    TextWrapping="Wrap"
                                    Margin="0,8,0,16" />
 
-                        <CheckBox x:Name="StartWithWindowsCheck" Content="Start with Windows" Checked="SettingsCheck_Changed" Unchecked="SettingsCheck_Changed" Margin="0,0,0,10" />
-                        <CheckBox x:Name="MinimizeToTrayCheck" Content="Minimize to tray when closing window" Checked="SettingsCheck_Changed" Unchecked="SettingsCheck_Changed" Margin="0,0,0,16" />
+                        <CheckBox x:Name="StartWithWindowsCheck" Content="Start with Windows" Checked="SettingsCheck_Changed" Unchecked="SettingsCheck_Changed" Margin="0,0,0,10" Foreground="{DynamicResource TextPrimary}" />
+                        <CheckBox x:Name="MinimizeToTrayCheck" Content="Minimize to tray when closing window" Checked="SettingsCheck_Changed" Unchecked="SettingsCheck_Changed" Margin="0,0,0,16" Foreground="{DynamicResource TextPrimary}" />
 
-                        <TextBlock Text="Settings file" FontWeight="SemiBold" Foreground="#374151" />
+                        <TextBlock Text="Theme" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" />
+                        <ComboBox x:Name="ThemeComboBox" SelectionChanged="ThemeComboBox_SelectionChanged" Margin="0,4,0,16">
+                            <ComboBoxItem Content="System Default" Tag="System" />
+                            <ComboBoxItem Content="Light" Tag="Light" />
+                            <ComboBoxItem Content="Dark" Tag="Dark" />
+                        </ComboBox>
+
+                        <TextBlock Text="Settings file" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" />
                         <TextBox x:Name="SettingsPathText" IsReadOnly="True" />
                     </StackPanel>
                 </Border>
             </TabItem>
 
             <TabItem Header="Dev Options">
-                <Border Background="White" CornerRadius="18" Padding="26" Margin="0,12,0,0">
+                <Border Background="{DynamicResource CardBackground}" CornerRadius="18" Padding="26" Margin="0,12,0,0">
                     <StackPanel>
-                        <Border Background="#F9FAFB" BorderBrush="#E5E7EB" BorderThickness="1" CornerRadius="18" Padding="20" Margin="0,0,0,18">
+                        <Border Background="{DynamicResource DevOptionsBackground}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="18" Padding="20" Margin="0,0,0,18">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto" />
@@ -230,16 +237,16 @@
                                 <Image x:Name="AboutLogoImage" Width="78" Height="78" Stretch="Uniform" VerticalAlignment="Center" />
                                 <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="18,0,0,0">
                                     <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="Key" FontSize="34" FontWeight="Bold" Foreground="#DC2626" />
-                                        <TextBlock Text=" Disabler" FontSize="34" FontWeight="Bold" Foreground="#111827" />
+                                        <TextBlock Text="Key" FontSize="34" FontWeight="Bold" Foreground="{DynamicResource BrandRed}" />
+                                        <TextBlock Text=" Disabler" FontSize="34" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" />
                                     </StackPanel>
-                                    <TextBlock Text="Device-specific keyboard control utility" Foreground="#6B7280" Margin="0,4,0,0" />
+                                    <TextBlock Text="Device-specific keyboard control utility" Foreground="{DynamicResource TextMuted}" Margin="0,4,0,0" />
                                 </StackPanel>
                             </Grid>
                         </Border>
 
-                        <TextBlock Text="Developed by" FontSize="14" FontWeight="SemiBold" Foreground="#6B7280" />
-                        <TextBlock Text="Samslab (Samiul Hasan)" FontSize="26" FontWeight="Bold" Foreground="#111827" Margin="0,4,0,18" />
+                        <TextBlock Text="Developed by" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource TextMuted}" />
+                        <TextBlock Text="Samslab (Samiul Hasan)" FontSize="26" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" Margin="0,4,0,18" />
 
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -252,20 +259,22 @@
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
 
-                            <TextBlock Grid.Row="0" Grid.Column="0" Text="GitHub" FontWeight="SemiBold" Foreground="#374151" Margin="0,0,0,10" />
-                            <TextBox Grid.Row="0" Grid.Column="1" Text="https://github.com/SamiulxHasanx07" IsReadOnly="True" BorderThickness="0" Background="#F3F4F6" Padding="10,6" Margin="0,0,0,10" />
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="GitHub" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,10" />
+                            <TextBox Grid.Row="0" Grid.Column="1" Text="https://github.com/SamiulxHasanx07" IsReadOnly="True" BorderThickness="0" Background="{DynamicResource WindowBackground}" Padding="10,6" Margin="0,0,0,10" />
 
-                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Email" FontWeight="SemiBold" Foreground="#374151" Margin="0,0,0,10" />
-                            <TextBox Grid.Row="1" Grid.Column="1" Text="samiulxhasan650@gmail.com" IsReadOnly="True" BorderThickness="0" Background="#F3F4F6" Padding="10,6" Margin="0,0,0,10" />
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Email" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,10" />
+                            <TextBox Grid.Row="1" Grid.Column="1" Text="samiulxhasan650@gmail.com" IsReadOnly="True" BorderThickness="0" Background="{DynamicResource WindowBackground}" Padding="10,6" Margin="0,0,0,10" />
 
-                            <TextBlock Grid.Row="2" Grid.Column="0" Text="Phone" FontWeight="SemiBold" Foreground="#374151" />
-                            <TextBox Grid.Row="2" Grid.Column="1" Text="+8801788058690" IsReadOnly="True" BorderThickness="0" Background="#F3F4F6" Padding="10,6" />
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="Phone" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" />
+                            <TextBox Grid.Row="2" Grid.Column="1" Text="+8801788058690" IsReadOnly="True" BorderThickness="0" Background="{DynamicResource WindowBackground}" Padding="10,6" />
                         </Grid>
                     </StackPanel>
                 </Border>
             </TabItem>
         </TabControl>
 
-        <TextBlock Grid.Row="2" x:Name="FooterText" Text="Ready" Foreground="#6B7280" Margin="4,16,0,0" />
+        <TextBlock Grid.Row="2" x:Name="FooterText" Text="Ready" Foreground="{DynamicResource TextMuted}" Margin="4,16,0,0" />
     </Grid>
 </Window>
+
+
