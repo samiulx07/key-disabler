@@ -5,27 +5,35 @@
     <SolidColorBrush x:Key="CardBackground" Color="White" />
     <SolidColorBrush x:Key="PanelBackground" Color="#F8FAFC" />
     <SolidColorBrush x:Key="DevOptionsBackground" Color="#F9FAFB" />
-    
+
     <SolidColorBrush x:Key="TextPrimary" Color="#111827" />
     <SolidColorBrush x:Key="TextSecondary" Color="#374151" />
     <SolidColorBrush x:Key="TextMuted" Color="#6B7280" />
-    
+
     <SolidColorBrush x:Key="BorderBrush" Color="#E5E7EB" />
     <SolidColorBrush x:Key="PrimaryBrush" Color="#2563EB" />
-    
+    <SolidColorBrush x:Key="PrimarySoftBrush" Color="#DBEAFE" />
+
+    <SolidColorBrush x:Key="TabBarBackground" Color="#EAF0F8" />
     <SolidColorBrush x:Key="TabSelectedBackground" Color="White" />
     <SolidColorBrush x:Key="TabSelectedForeground" Color="#2563EB" />
     <SolidColorBrush x:Key="TabHoverBackground" Color="#E2E8F0" />
     <SolidColorBrush x:Key="TabUnselectedForeground" Color="#64748B" />
-    
+
+    <SolidColorBrush x:Key="DropdownBackground" Color="#FFFFFF" />
+    <SolidColorBrush x:Key="DropdownHoverBackground" Color="#EFF6FF" />
+    <SolidColorBrush x:Key="DropdownSelectedBackground" Color="#DBEAFE" />
+
+    <SolidColorBrush x:Key="ButtonHoverBackground" Color="#F1F5F9" />
+    <SolidColorBrush x:Key="ButtonPressedBackground" Color="#E2E8F0" />
+
     <SolidColorBrush x:Key="WarningBackground" Color="#FEF2F2" />
     <SolidColorBrush x:Key="WarningBorder" Color="#FECACA" />
     <SolidColorBrush x:Key="WarningText" Color="#991B1B" />
-    
+
     <SolidColorBrush x:Key="BrandRed" Color="#DC2626" />
     <SolidColorBrush x:Key="TextSuccess" Color="#065F46" />
 
-    <!-- Control Colors -->
     <SolidColorBrush x:Key="TextBoxBackground" Color="White" />
     <SolidColorBrush x:Key="TextBoxBorder" Color="#D1D5DB" />
     <SolidColorBrush x:Key="ListBackground" Color="White" />
@@ -33,4 +41,3 @@
     <SolidColorBrush x:Key="InfoBackground" Color="#EFF6FF" />
     <SolidColorBrush x:Key="InfoBorder" Color="#BFDBFE" />
 </ResourceDictionary>
-
