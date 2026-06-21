@@ -1,6 +1,8 @@
 using System.IO;
 using System.Text;
-using System.Windows;
+using WpfMessageBox = System.Windows.MessageBox;
+using WpfMessageBoxButton = System.Windows.MessageBoxButton;
+using WpfMessageBoxImage = System.Windows.MessageBoxImage;
 
 namespace KeyDisabler.App.Services;
 
@@ -40,11 +42,11 @@ public static class StartupLogService
 
         try
         {
-            MessageBox.Show(
-                $"Key Disabler failed to start.\n\nError: {exception.Message}\n\nA log was saved here:\n{LogPath}",
+            WpfMessageBox.Show(
+                $"Key Disabler could not open.\n\nError: {exception.Message}\n\nLog file:\n{LogPath}",
                 "Key Disabler startup error",
-                MessageBoxButton.OK,
-                MessageBoxImage.Error);
+                WpfMessageBoxButton.OK,
+                WpfMessageBoxImage.Error);
         }
         catch
         {
