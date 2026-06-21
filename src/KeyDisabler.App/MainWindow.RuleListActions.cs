@@ -116,7 +116,7 @@ public partial class MainWindow
         var actions = new WpfStackPanel
         {
             Orientation = WpfOrientation.Horizontal,
-            HorizontalAlignment = HorizontalAlignment.Right
+            HorizontalAlignment = System.Windows.HorizontalAlignment.Right
         };
         WpfDockPanel.SetDock(actions, WpfDock.Right);
 
