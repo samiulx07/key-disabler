@@ -47,15 +47,18 @@
                     <Border Background="White" CornerRadius="18" Padding="22" Margin="0,0,12,0">
                         <StackPanel>
                             <TextBlock Text="Current keyboard event" FontSize="20" FontWeight="SemiBold" Foreground="#111827" />
-                            <TextBlock Text="Press any key from your laptop keyboard or external keyboard. The app will show which keyboard produced it and whether it was blocked."
+                            <TextBlock Text="Click 'Start Detect Keys' to begin monitoring key presses. The app will show which keyboard produced the key and whether it was blocked."
                                        TextWrapping="Wrap"
                                        Foreground="#6B7280"
                                        Margin="0,8,0,16" />
 
+                            <Button x:Name="ToggleDetectKeysButton" Content="Start Detect Keys" Click="ToggleDashboardDetection_Click" Margin="0,0,0,16"
+                                    Padding="18,10" FontWeight="SemiBold" />
+
                             <Border Background="#F8FAFC" BorderBrush="#E5E7EB" BorderThickness="1" CornerRadius="14" Padding="18">
                                 <StackPanel>
                                     <TextBlock Text="Last detected key" Foreground="#6B7280" />
-                                    <TextBlock x:Name="LastKeyText" Text="No key detected yet" FontSize="18" FontWeight="SemiBold" Foreground="#111827" Margin="0,6,0,0" TextWrapping="Wrap" />
+                                    <TextBlock x:Name="LastKeyText" Text="Press 'Start Detect Keys' to begin" FontSize="18" FontWeight="SemiBold" Foreground="#111827" Margin="0,6,0,0" TextWrapping="Wrap" />
                                 </StackPanel>
                             </Border>
 
@@ -221,7 +224,7 @@
                         <Border Background="#F9FAFB" BorderBrush="#E5E7EB" BorderThickness="1" CornerRadius="18" Padding="20" Margin="0,0,0,18">
                             <Grid>
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="96" />
+                                    <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
                                 <Image x:Name="AboutLogoImage" Width="78" Height="78" Stretch="Uniform" VerticalAlignment="Center" />

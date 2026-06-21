@@ -8,6 +8,8 @@ public sealed class DeviceKeyboardBlockerService : IDisposable
     private readonly object _syncRoot = new();
     private readonly InterceptionNative.InterceptionPredicate _keyboardPredicate;
     private readonly Dictionary<string, KeyboardRule> _rulesByDeviceAndKey = new(StringComparer.OrdinalIgnoreCase);
+    private readonly HashSet<string> _disabledDeviceIds = new(StringComparer.OrdinalIgnoreCase);
+    private readonly HashSet<string> _disabledHardwareIds = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, KeyboardDevice> _deviceCache = new(StringComparer.OrdinalIgnoreCase);
 
     private CancellationTokenSource? _cancellationTokenSource;
@@ -92,7 +94,7 @@ public sealed class DeviceKeyboardBlockerService : IDisposable
         _workerTask = Task.Run(() => WorkerLoop(_cancellationTokenSource.Token));
     }
 
-    public void UpdateRules(IEnumerable<KeyboardRule> rules, IEnumerable<DisabledKeyboardRule> inactiveFullKeyboardRules)
+    public void UpdateRules(IEnumerable<KeyboardRule> rules, IEnumerable<DisabledKeyboardRule> disabledKeyboardRules)
     {
         var activeRules = rules
             .Where(rule => rule.IsEnabled)
@@ -102,12 +104,40 @@ public sealed class DeviceKeyboardBlockerService : IDisposable
             .Select(group => group.Last())
             .ToDictionary(BuildRuleKey, rule => rule, StringComparer.OrdinalIgnoreCase);
 
+        var disabledDeviceIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var disabledHardwareIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var disabledRule in disabledKeyboardRules.Where(r => r.IsEnabled))
+        {
+            if (!string.IsNullOrWhiteSpace(disabledRule.DeviceId))
+            {
+                disabledDeviceIds.Add(disabledRule.DeviceId);
+            }
+
+            if (!string.IsNullOrWhiteSpace(disabledRule.HardwareId))
+            {
+                disabledHardwareIds.Add(disabledRule.HardwareId.Trim().ToUpperInvariant());
+            }
+        }
+
         lock (_syncRoot)
         {
             _rulesByDeviceAndKey.Clear();
             foreach (var pair in activeRules)
             {
                 _rulesByDeviceAndKey[pair.Key] = pair.Value;
+            }
+
+            _disabledDeviceIds.Clear();
+            foreach (var id in disabledDeviceIds)
+            {
+                _disabledDeviceIds.Add(id);
+            }
+
+            _disabledHardwareIds.Clear();
+            foreach (var id in disabledHardwareIds)
+            {
+                _disabledHardwareIds.Add(id);
             }
         }
     }
@@ -156,13 +186,33 @@ public sealed class DeviceKeyboardBlockerService : IDisposable
             RememberDevice(deviceId, hardwareId, displayName);
 
             var isExtended = (stroke.State & InterceptionNative.KeyStateE0) == InterceptionNative.KeyStateE0;
-            var ruleKey = BuildRuleKey(deviceId, stroke.Code, isExtended);
             var keyName = KeyNameResolver.Resolve(stroke.Code, isExtended);
             var shouldStop = false;
 
             lock (_syncRoot)
             {
-                shouldStop = _rulesByDeviceAndKey.ContainsKey(ruleKey);
+                // Check full-keyboard disable first
+                if (_disabledDeviceIds.Contains(deviceId))
+                {
+                    shouldStop = true;
+                }
+
+                // Also check by hardware ID
+                if (!shouldStop && !string.IsNullOrWhiteSpace(hardwareId))
+                {
+                    var normalizedHwId = hardwareId.Trim().ToUpperInvariant();
+                    if (_disabledHardwareIds.Contains(normalizedHwId))
+                    {
+                        shouldStop = true;
+                    }
+                }
+
+                // Then check per-key rules
+                if (!shouldStop)
+                {
+                    var ruleKey = BuildRuleKey(deviceId, stroke.Code, isExtended);
+                    shouldStop = _rulesByDeviceAndKey.ContainsKey(ruleKey);
+                }
             }
 
             shouldForward = !shouldStop;

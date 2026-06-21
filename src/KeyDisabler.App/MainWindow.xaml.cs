@@ -26,6 +26,7 @@ public partial class MainWindow : Window
     private HwndSource? _hwndSource;
     private bool _isDetectingDevice;
     private bool _isCapturingRuleKey;
+    private bool _isDashboardDetecting;
     private bool _isLoading;
     private bool _allowClose;
 
@@ -100,7 +101,11 @@ public partial class MainWindow : Window
         {
             var device = EnsureDeviceFromEvent(e);
 
-            LastKeyText.Text = $"{e.KeyName} from {device.DisplayName}";
+            if (_isDashboardDetecting)
+            {
+                LastKeyText.Text = $"{e.KeyName} from {device.DisplayName}";
+            }
+
             FooterText.Text = e.WasBlocked
                 ? $"Blocked: {e.KeyName} from {device.DisplayName}"
                 : $"Allowed: {e.KeyName} from {device.DisplayName}";
@@ -136,7 +141,11 @@ public partial class MainWindow : Window
             var device = _devices.FirstOrDefault(item => string.Equals(item.Id, e.DeviceId, StringComparison.OrdinalIgnoreCase));
             var deviceName = device?.DisplayName ?? "Unknown keyboard";
 
-            LastKeyText.Text = $"{e.KeyName} from {deviceName}";
+            if (_isDashboardDetecting)
+            {
+                LastKeyText.Text = $"{e.KeyName} from {deviceName}";
+            }
+
             FooterText.Text = $"Driver missing. Detection only: {e.KeyName} from {deviceName}";
 
             if (_isDetectingDevice && device is not null)
@@ -162,6 +171,24 @@ public partial class MainWindow : Window
         _isCapturingRuleKey = false;
         UpdateStatus("Press a key on the target keyboard");
         FooterText.Text = "Detection mode is active. Press any key from the exact keyboard you want to control.";
+    }
+
+    private void ToggleDashboardDetection_Click(object sender, RoutedEventArgs e)
+    {
+        _isDashboardDetecting = !_isDashboardDetecting;
+
+        if (_isDashboardDetecting)
+        {
+            ToggleDetectKeysButton.Content = "Stop Detect Keys";
+            LastKeyText.Text = "Listening for key presses...";
+            UpdateStatus("Dashboard key detection active");
+        }
+        else
+        {
+            ToggleDetectKeysButton.Content = "Start Detect Keys";
+            LastKeyText.Text = "Press 'Start Detect Keys' to begin";
+            UpdateStatus("Dashboard key detection stopped");
+        }
     }
 
     private void CaptureRuleKey_Click(object sender, RoutedEventArgs e)
@@ -562,7 +589,7 @@ public partial class MainWindow : Window
                 var executablePath = Environment.ProcessPath;
                 if (!string.IsNullOrWhiteSpace(executablePath))
                 {
-                    key.SetValue(StartupRegistryValueName, $"\"{executablePath}\"");
+                    key.SetValue(StartupRegistryValueName, $"\"{executablePath}\" --minimized");
                 }
             }
             else

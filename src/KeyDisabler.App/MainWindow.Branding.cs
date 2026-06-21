@@ -1,16 +1,12 @@
-using System.Runtime.CompilerServices;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Interop;
 using KeyDisabler.App.Services;
-using WpfHorizontalAlignment = System.Windows.HorizontalAlignment;
-using WpfVerticalAlignment = System.Windows.VerticalAlignment;
 
 namespace KeyDisabler.App;
 
 internal static class MainWindowBrandingBootstrap
 {
-    [ModuleInitializer]
+    [System.Runtime.CompilerServices.ModuleInitializer]
     internal static void Initialize()
     {
         EventManager.RegisterClassHandler(
@@ -35,8 +31,18 @@ public partial class MainWindow
     internal void ApplyBrandingAndSingleInstanceHooks()
     {
         Icon = BrandAssetService.LoadWindowIcon();
-        AboutLogoImage.Source = BrandAssetService.LoadAboutLogo();
-        UseFullAboutLogoLayout();
+
+        // Load the square icon (AppIcon.png) for the Dev Options icon area
+        var iconImage = BrandAssetService.LoadAppIconImage();
+        if (iconImage is not null)
+        {
+            AboutLogoImage.Source = iconImage;
+        }
+        else
+        {
+            // Fall back to the full horizontal logo if icon is missing
+            AboutLogoImage.Source = BrandAssetService.LoadAboutLogo();
+        }
 
         if (_singleInstanceHookAttached)
         {
@@ -47,29 +53,6 @@ public partial class MainWindow
         var source = HwndSource.FromHwnd(handle);
         source?.AddHook(SingleInstanceWndProc);
         _singleInstanceHookAttached = true;
-    }
-
-    private void UseFullAboutLogoLayout()
-    {
-        AboutLogoImage.Width = 780;
-        AboutLogoImage.Height = 130;
-        AboutLogoImage.HorizontalAlignment = WpfHorizontalAlignment.Left;
-        AboutLogoImage.VerticalAlignment = WpfVerticalAlignment.Center;
-        Grid.SetColumn(AboutLogoImage, 0);
-        Grid.SetColumnSpan(AboutLogoImage, 2);
-
-        if (AboutLogoImage.Parent is not Grid logoGrid)
-        {
-            return;
-        }
-
-        foreach (UIElement child in logoGrid.Children)
-        {
-            if (!ReferenceEquals(child, AboutLogoImage))
-            {
-                child.Visibility = Visibility.Collapsed;
-            }
-        }
     }
 
     private IntPtr SingleInstanceWndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
