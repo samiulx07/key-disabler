@@ -1,14 +1,7 @@
+using System.Collections.Specialized;
 using System.Runtime.CompilerServices;
 using System.Windows;
-using System.Windows.Media;
 using System.Windows.Threading;
-using WpfButton = System.Windows.Controls.Button;
-using WpfDockPanel = System.Windows.Controls.DockPanel;
-using WpfGrid = System.Windows.Controls.Grid;
-using WpfListView = System.Windows.Controls.ListView;
-using WpfStackPanel = System.Windows.Controls.StackPanel;
-using WpfTextBlock = System.Windows.Controls.TextBlock;
-using WpfOrientation = System.Windows.Controls.Orientation;
 
 namespace KeyDisabler.App;
 
@@ -27,108 +20,38 @@ internal static class MainWindowRuleListActionsBootstrap
     {
         if (sender is MainWindow window)
         {
-            window.Dispatcher.BeginInvoke(new Action(window.ApplyRuleListActionHeaders), DispatcherPriority.ContextIdle);
+            window.Dispatcher.BeginInvoke(
+                new Action(window.InitializeRuleListActions),
+                DispatcherPriority.ApplicationIdle);
         }
     }
 }
 
 public partial class MainWindow
 {
-    internal void ApplyRuleListActionHeaders()
-    {
-        AddBlockRulesHeaderActions();
-        AddRemapRulesHeaderActions();
-    }
+    private bool _ruleListActionsInitialized;
 
-    private void AddBlockRulesHeaderActions()
+    internal void InitializeRuleListActions()
     {
-        if (FindName("RulesList") is not WpfListView rulesList || rulesList.Parent is not WpfGrid grid)
+        if (_ruleListActionsInitialized)
         {
             return;
         }
 
-        if (FindVisualChildByNameLocal<FrameworkElement>(grid, "SavedBlockRulesActionHeader") is not null)
-        {
-            return;
-        }
+        _ruleListActionsInitialized = true;
+        _rules.CollectionChanged += RuleCollections_CollectionChanged;
+        _disabledKeyboards.CollectionChanged += RuleCollections_CollectionChanged;
+        _remapRules.CollectionChanged += RuleCollections_CollectionChanged;
 
-        HideTextBlockInGridRow(grid, 0, "Saved block rules");
-
-        var header = BuildActionHeader("Saved Block Rules", RemoveRule_Click, ResetAllBlockRules_Click);
-        header.Name = "SavedBlockRulesActionHeader";
-        WpfGrid.SetRow(header, 0);
-        grid.Children.Add(header);
+        Dispatcher.BeginInvoke(new Action(UpdateProtectionSummary), DispatcherPriority.ApplicationIdle);
     }
 
-    private void AddRemapRulesHeaderActions()
+    private void RuleCollections_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
-        if (FindName("RemapRulesList") is not WpfListView remapList || remapList.Parent is not WpfGrid grid)
-        {
-            return;
-        }
-
-        if (FindVisualChildByNameLocal<FrameworkElement>(grid, "SavedRemapRulesActionHeader") is not null)
-        {
-            return;
-        }
-
-        HideGridRowChildren(grid, 2);
-
-        var header = BuildActionHeader("Saved Remap Rules", RemoveRemapRule_Click, ResetAllRemapRules_Click);
-        header.Name = "SavedRemapRulesActionHeader";
-        WpfGrid.SetRow(header, 2);
-        grid.Children.Add(header);
+        Dispatcher.BeginInvoke(new Action(UpdateProtectionSummary), DispatcherPriority.ApplicationIdle);
     }
 
-    private WpfDockPanel BuildActionHeader(string title, RoutedEventHandler removeHandler, RoutedEventHandler resetHandler)
-    {
-        var header = new WpfDockPanel
-        {
-            LastChildFill = true,
-            Margin = new Thickness(0, 0, 0, 14)
-        };
-
-        var actions = new WpfStackPanel
-        {
-            Orientation = WpfOrientation.Horizontal,
-            HorizontalAlignment = HorizontalAlignment.Right
-        };
-        WpfDockPanel.SetDock(actions, Dock.Right);
-
-        var removeButton = new WpfButton
-        {
-            Content = "Remove Selected",
-            Padding = new Thickness(12, 7, 12, 7),
-            Margin = new Thickness(0, 0, 8, 0)
-        };
-        removeButton.Click += removeHandler;
-
-        var resetButton = new WpfButton
-        {
-            Content = "Reset All",
-            Padding = new Thickness(12, 7, 12, 7),
-            Margin = new Thickness(0)
-        };
-        resetButton.Click += resetHandler;
-
-        actions.Children.Add(removeButton);
-        actions.Children.Add(resetButton);
-        header.Children.Add(actions);
-
-        var titleText = new WpfTextBlock
-        {
-            Text = title,
-            FontSize = 20,
-            FontWeight = FontWeights.SemiBold,
-            VerticalAlignment = VerticalAlignment.Center
-        };
-        titleText.SetResourceReference(ForegroundProperty, "TextPrimary");
-        header.Children.Add(titleText);
-
-        return header;
-    }
-
-    private void ResetAllBlockRules_Click(object sender, RoutedEventArgs e)
+    private void ResetBlockRules_Click(object sender, RoutedEventArgs e)
     {
         if (_rules.Count == 0)
         {
@@ -139,12 +62,11 @@ public partial class MainWindow
         _rules.Clear();
         SaveSettingsFromUi();
         UpdateDeviceBlocker();
-        UpdateRuleCount();
         UpdateProtectionSummary();
-        UpdateStatus("All block rules reset");
+        UpdateStatus("All saved block rules reset");
     }
 
-    private void ResetAllRemapRules_Click(object sender, RoutedEventArgs e)
+    private void ResetRemapRules_Click(object sender, RoutedEventArgs e)
     {
         if (_remapRules.Count == 0)
         {
@@ -156,59 +78,6 @@ public partial class MainWindow
         SaveRemapSettings();
         UpdateRemapDeviceBlocker();
         UpdateProtectionSummary();
-        UpdateStatus("All remap rules reset");
-    }
-
-    private static void HideGridRowChildren(WpfGrid grid, int row)
-    {
-        foreach (UIElement child in grid.Children)
-        {
-            if (WpfGrid.GetRow(child) == row)
-            {
-                child.Visibility = Visibility.Collapsed;
-            }
-        }
-    }
-
-    private static void HideTextBlockInGridRow(WpfGrid grid, int row, string text)
-    {
-        foreach (var textBlock in FindVisualChildrenLocal<WpfTextBlock>(grid))
-        {
-            if (WpfGrid.GetRow(textBlock) == row && string.Equals(textBlock.Text, text, StringComparison.OrdinalIgnoreCase))
-            {
-                textBlock.Visibility = Visibility.Collapsed;
-            }
-        }
-    }
-
-    private static IEnumerable<T> FindVisualChildrenLocal<T>(DependencyObject root) where T : DependencyObject
-    {
-        var count = VisualTreeHelper.GetChildrenCount(root);
-        for (var i = 0; i < count; i++)
-        {
-            var child = VisualTreeHelper.GetChild(root, i);
-            if (child is T typedChild)
-            {
-                yield return typedChild;
-            }
-
-            foreach (var descendant in FindVisualChildrenLocal<T>(child))
-            {
-                yield return descendant;
-            }
-        }
-    }
-
-    private static T? FindVisualChildByNameLocal<T>(DependencyObject root, string name) where T : FrameworkElement
-    {
-        foreach (var child in FindVisualChildrenLocal<T>(root))
-        {
-            if (string.Equals(child.Name, name, StringComparison.Ordinal))
-            {
-                return child;
-            }
-        }
-
-        return null;
+        UpdateStatus("All saved remap rules reset");
     }
 }
