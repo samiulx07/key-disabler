@@ -20,10 +20,14 @@ public static class BrandAssetService
             var exePath = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName;
             if (!string.IsNullOrEmpty(exePath))
             {
-                var icon = Icon.ExtractAssociatedIcon(exePath);
+                using var icon = Icon.ExtractAssociatedIcon(exePath);
                 if (icon != null)
                 {
-                    return icon;
+                    // The system tray strictly requires SmallIconSize (usually 16x16). 
+                    // Since our AppIcon.ico is 256x256, it must be resized.
+                    using var bitmap = icon.ToBitmap();
+                    using var resized = new Bitmap(bitmap, System.Windows.Forms.SystemInformation.SmallIconSize);
+                    return Icon.FromHandle(resized.GetHicon());
                 }
             }
             return SystemIcons.Application;
@@ -38,10 +42,17 @@ public static class BrandAssetService
     {
         try
         {
-            using var icon = LoadTrayIconOrDefault();
-            if (icon == SystemIcons.Application)
-                return null;
-            return Imaging.CreateBitmapSourceFromHIcon(icon.Handle, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
+            var exePath = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName;
+            if (!string.IsNullOrEmpty(exePath))
+            {
+                using var icon = Icon.ExtractAssociatedIcon(exePath);
+                if (icon != null)
+                {
+                    // Keep the high-resolution icon for the Window (Taskbar, Alt+Tab)
+                    return Imaging.CreateBitmapSourceFromHIcon(icon.Handle, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
+                }
+            }
+            return null;
         }
         catch
         {
