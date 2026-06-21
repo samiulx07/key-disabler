@@ -399,10 +399,12 @@ public partial class MainWindow : Window
         var selectedId = (KeyboardList.SelectedItem as KeyboardDevice)?.Id;
         _devices.Clear();
 
+        var usedFallback = false;
         var devices = _deviceBlockerService.GetKeyboardDevices();
         if (devices.Count == 0)
         {
             devices = _rawInputService.GetKeyboardDevices();
+            usedFallback = devices.Count > 0;
         }
 
         foreach (var device in devices)
@@ -428,7 +430,15 @@ public partial class MainWindow : Window
         }
 
         UpdateSelectedDeviceStatus();
-        FooterText.Text = $"Detected {_devices.Count} keyboard device(s).";
+
+        if (usedFallback)
+        {
+            FooterText.Text = $"Detected {_devices.Count} keyboard(s) via Windows. Restart PC after driver install to enable blocking.";
+        }
+        else
+        {
+            FooterText.Text = $"Detected {_devices.Count} keyboard device(s).";
+        }
     }
 
     private KeyboardDevice EnsureDeviceFromEvent(DeviceKeyEventArgs e)

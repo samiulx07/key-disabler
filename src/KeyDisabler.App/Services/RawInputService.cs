@@ -9,6 +9,7 @@ public sealed class RawInputService
     private const uint RIM_TYPEKEYBOARD = 1;
     private const uint RID_INPUT = 0x10000003;
     private const uint RIDI_DEVICENAME = 0x20000007;
+    private const uint RIDI_DEVICEINFO = 0x2000000B;
     private const uint RIDEV_INPUTSINK = 0x00000100;
     private const int WM_INPUT = 0x00FF;
     private const uint WM_KEYDOWN = 0x0100;
@@ -34,7 +35,66 @@ public sealed class RawInputService
 
     public IReadOnlyList<AppKeyboardDevice> GetKeyboardDevices()
     {
-        return Array.Empty<AppKeyboardDevice>();
+        var devices = new List<AppKeyboardDevice>();
+
+        uint deviceCount = 0;
+        var structSize = (uint)Marshal.SizeOf<RAWINPUTDEVICELIST>();
+        var listResult = GetRawInputDeviceList(null, ref deviceCount, structSize);
+        if (listResult == uint.MaxValue || deviceCount == 0)
+        {
+            return devices;
+        }
+
+        var deviceList = new RAWINPUTDEVICELIST[deviceCount];
+        var fillResult = GetRawInputDeviceList(deviceList, ref deviceCount, structSize);
+        if (fillResult == uint.MaxValue)
+        {
+            return devices;
+        }
+
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        for (var i = 0; i < deviceCount; i++)
+        {
+            var entry = deviceList[i];
+            if (entry.dwType != RIM_TYPEKEYBOARD)
+            {
+                continue;
+            }
+
+            var devicePath = GetDevicePath(entry.hDevice);
+            if (string.IsNullOrWhiteSpace(devicePath))
+            {
+                continue;
+            }
+
+            // Skip RDP and virtual keyboard devices that can't be controlled
+            var upper = devicePath.ToUpperInvariant();
+            if (upper.Contains("ROOT#RDP_") || upper.Contains("TERMSRV"))
+            {
+                continue;
+            }
+
+            // Deduplicate by device path
+            var normalizedPath = upper.Trim();
+            if (!seen.Add(normalizedPath))
+            {
+                continue;
+            }
+
+            var displayName = BuildRawInputDisplayName(i + 1, devicePath);
+            var id = $"rawinput:{normalizedPath.GetHashCode():X8}";
+
+            devices.Add(new AppKeyboardDevice
+            {
+                Id = id,
+                DevicePath = devicePath,
+                DisplayName = displayName,
+                DeviceType = "Raw Input Keyboard (detection only)"
+            });
+        }
+
+        return devices;
     }
 
     public void ProcessMessage(IntPtr message, IntPtr lParam)
@@ -95,6 +155,28 @@ public sealed class RawInputService
         }
     }
 
+    private static string BuildRawInputDisplayName(int index, string devicePath)
+    {
+        var upper = devicePath.ToUpperInvariant();
+
+        if (upper.Contains("ACPI") || upper.Contains("PNP0303") || upper.Contains("PNP0320"))
+        {
+            return $"Keyboard {index} - Built-in / Laptop Keyboard (detection only)";
+        }
+
+        if (upper.Contains("VID_") || upper.Contains("HID#"))
+        {
+            return $"Keyboard {index} - USB/HID Keyboard (detection only)";
+        }
+
+        if (upper.Contains("BTH") || upper.Contains("BLUETOOTH"))
+        {
+            return $"Keyboard {index} - Bluetooth Keyboard (detection only)";
+        }
+
+        return $"Keyboard {index} - Keyboard (detection only)";
+    }
+
     private static string GetDevicePath(IntPtr deviceHandle)
     {
         uint size = 0;
@@ -142,6 +224,12 @@ public sealed class RawInputService
         ref uint pcbSize,
         uint cbSizeHeader);
 
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern uint GetRawInputDeviceList(
+        [Out] RAWINPUTDEVICELIST[]? pRawInputDeviceList,
+        ref uint puiNumDevices,
+        uint cbSize);
+
     [StructLayout(LayoutKind.Sequential)]
     private struct RAWINPUTDEVICE
     {
@@ -176,5 +264,12 @@ public sealed class RawInputService
         public ushort VKey;
         public uint Message;
         public uint ExtraInformation;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct RAWINPUTDEVICELIST
+    {
+        public IntPtr hDevice;
+        public uint dwType;
     }
 }
