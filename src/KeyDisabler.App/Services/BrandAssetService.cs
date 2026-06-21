@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using Forms = System.Windows.Forms;
 
 namespace KeyDisabler.App.Services;
 
@@ -17,24 +18,27 @@ public static class BrandAssetService
     {
         try
         {
+            var appIconPath = BuildAssetPath(AppIconIcoPath);
+            if (File.Exists(appIconPath))
+            {
+                return new Icon(appIconPath, Forms.SystemInformation.SmallIconSize);
+            }
+
             var exePath = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName;
             if (!string.IsNullOrEmpty(exePath))
             {
                 using var icon = Icon.ExtractAssociatedIcon(exePath);
                 if (icon != null)
                 {
-                    // The system tray strictly requires SmallIconSize (usually 16x16). 
-                    // Since our AppIcon.ico is 256x256, it must be resized.
-                    using var bitmap = icon.ToBitmap();
-                    using var resized = new Bitmap(bitmap, System.Windows.Forms.SystemInformation.SmallIconSize);
-                    return Icon.FromHandle(resized.GetHicon());
+                    return (Icon)icon.Clone();
                 }
             }
-            return SystemIcons.Application;
+
+            return (Icon)SystemIcons.Application.Clone();
         }
         catch
         {
-            return SystemIcons.Application;
+            return (Icon)SystemIcons.Application.Clone();
         }
     }
 
@@ -42,16 +46,23 @@ public static class BrandAssetService
     {
         try
         {
+            var appIconPath = BuildAssetPath(AppIconIcoPath);
+            if (File.Exists(appIconPath))
+            {
+                using var icon = new Icon(appIconPath);
+                return Imaging.CreateBitmapSourceFromHIcon(icon.Handle, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
+            }
+
             var exePath = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName;
             if (!string.IsNullOrEmpty(exePath))
             {
                 using var icon = Icon.ExtractAssociatedIcon(exePath);
                 if (icon != null)
                 {
-                    // Keep the high-resolution icon for the Window (Taskbar, Alt+Tab)
                     return Imaging.CreateBitmapSourceFromHIcon(icon.Handle, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
                 }
             }
+
             return null;
         }
         catch
