@@ -1,4 +1,3 @@
-using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Runtime.CompilerServices;
 using System.Windows;
@@ -9,8 +8,9 @@ using KeyDisabler.App.Services;
 using WpfButton = System.Windows.Controls.Button;
 using WpfComboBox = System.Windows.Controls.ComboBox;
 using WpfControl = System.Windows.Controls.Control;
-using WpfListView = System.Windows.Controls.ListView;
+using WpfGrid = System.Windows.Controls.Grid;
 using WpfOrientation = System.Windows.Controls.Orientation;
+using WpfStackPanel = System.Windows.Controls.StackPanel;
 
 namespace KeyDisabler.App;
 
@@ -38,7 +38,6 @@ internal static class MainWindowKeyboardTesterBootstrap
 
 public partial class MainWindow
 {
-    private readonly ObservableCollection<KeyboardTestHistoryItem> _keyboardTestHistory = new();
     private readonly Dictionary<string, WpfButton> _keyboardTesterButtons = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, string> _keyboardTesterStates = new(StringComparer.OrdinalIgnoreCase);
 
@@ -49,8 +48,7 @@ public partial class MainWindow
     private WpfButton? _resetKeyboardTesterButton;
     private TextBlock? _testerLastKeyText;
     private TextBlock? _testerCountText;
-    private StackPanel? _keyboardTesterLayoutPanel;
-    private WpfListView? _testerHistoryList;
+    private WpfStackPanel? _keyboardTesterLayoutPanel;
 
     private bool _keyboardTesterInitialized;
     private bool _isKeyboardTesting;
@@ -69,8 +67,7 @@ public partial class MainWindow
         _resetKeyboardTesterButton = FindName("ResetKeyboardTesterButton") as WpfButton;
         _testerLastKeyText = FindName("TesterLastKeyText") as TextBlock;
         _testerCountText = FindName("TesterCountText") as TextBlock;
-        _keyboardTesterLayoutPanel = FindName("KeyboardTesterLayoutPanel") as StackPanel;
-        _testerHistoryList = FindName("TesterHistoryList") as WpfListView;
+        _keyboardTesterLayoutPanel = FindName("KeyboardTesterLayoutPanel") as WpfStackPanel;
 
         if (_keyboardTesterLayoutPanel is null)
         {
@@ -84,11 +81,6 @@ public partial class MainWindow
             _testerKeyboardCombo.ItemsSource = _devices;
             _testerKeyboardCombo.DisplayMemberPath = nameof(KeyboardDevice.DisplayName);
             _testerKeyboardCombo.SelectionChanged += TesterKeyboardCombo_SelectionChanged;
-        }
-
-        if (_testerHistoryList is not null)
-        {
-            _testerHistoryList.ItemsSource = _keyboardTestHistory;
         }
 
         _devices.CollectionChanged += TesterDevices_CollectionChanged;
@@ -150,7 +142,6 @@ public partial class MainWindow
 
     private void ResetKeyboardTester_Click(object sender, RoutedEventArgs e)
     {
-        _keyboardTestHistory.Clear();
         _keyboardTesterStates.Clear();
 
         foreach (var button in _keyboardTesterButtons.Values)
@@ -226,21 +217,7 @@ public partial class MainWindow
         var displayName = string.IsNullOrWhiteSpace(e.KeyName) ? $"Scan {e.ScanCode}" : e.KeyName;
         if (_testerLastKeyText is not null)
         {
-            _testerLastKeyText.Text = $"{displayName} from {device.DisplayName} — {action}";
-        }
-
-        _keyboardTestHistory.Insert(0, new KeyboardTestHistoryItem
-        {
-            Time = DateTime.Now.ToString("HH:mm:ss"),
-            Key = displayName,
-            ScanCode = e.ScanCode.ToString(),
-            Extended = e.IsExtendedKey ? "Yes" : "No",
-            Action = action
-        });
-
-        while (_keyboardTestHistory.Count > 25)
-        {
-            _keyboardTestHistory.RemoveAt(_keyboardTestHistory.Count - 1);
+            _testerLastKeyText.Text = $"{displayName} from {device.DisplayName} - {action}";
         }
     }
 
@@ -336,76 +313,193 @@ public partial class MainWindow
             return;
         }
 
-        AddTesterRow(
-            TesterKey("Esc", 0x01), TesterKey("F1", 0x3B), TesterKey("F2", 0x3C), TesterKey("F3", 0x3D), TesterKey("F4", 0x3E),
-            TesterKey("F5", 0x3F), TesterKey("F6", 0x40), TesterKey("F7", 0x41), TesterKey("F8", 0x42),
+        _keyboardTesterLayoutPanel.Children.Clear();
+
+        var keyboard = new WpfStackPanel
+        {
+            Orientation = WpfOrientation.Horizontal,
+            Margin = new Thickness(0, 4, 0, 0)
+        };
+
+        keyboard.Children.Add(BuildMainKeyboardSection());
+        keyboard.Children.Add(CreateHorizontalSpacer(18));
+        keyboard.Children.Add(BuildNavigationSection());
+        keyboard.Children.Add(CreateHorizontalSpacer(18));
+        keyboard.Children.Add(BuildNumpadSection());
+
+        _keyboardTesterLayoutPanel.Children.Add(keyboard);
+    }
+
+    private WpfStackPanel BuildMainKeyboardSection()
+    {
+        var section = new WpfStackPanel { Orientation = WpfOrientation.Vertical };
+
+        AddTesterRow(section,
+            TesterKey("Esc", 0x01), CreateHorizontalSpacer(28),
+            TesterKey("F1", 0x3B), TesterKey("F2", 0x3C), TesterKey("F3", 0x3D), TesterKey("F4", 0x3E), CreateHorizontalSpacer(14),
+            TesterKey("F5", 0x3F), TesterKey("F6", 0x40), TesterKey("F7", 0x41), TesterKey("F8", 0x42), CreateHorizontalSpacer(14),
             TesterKey("F9", 0x43), TesterKey("F10", 0x44), TesterKey("F11", 0x57), TesterKey("F12", 0x58));
 
-        AddTesterRow(
+        AddTesterRow(section,
             TesterKey("`", 0x29), TesterKey("1", 0x02), TesterKey("2", 0x03), TesterKey("3", 0x04), TesterKey("4", 0x05), TesterKey("5", 0x06),
             TesterKey("6", 0x07), TesterKey("7", 0x08), TesterKey("8", 0x09), TesterKey("9", 0x0A), TesterKey("0", 0x0B), TesterKey("-", 0x0C),
             TesterKey("=", 0x0D), TesterKey("Backspace", 0x0E, false, 96));
 
-        AddTesterRow(
+        AddTesterRow(section,
             TesterKey("Tab", 0x0F, false, 72), TesterKey("Q", 0x10), TesterKey("W", 0x11), TesterKey("E", 0x12), TesterKey("R", 0x13), TesterKey("T", 0x14),
             TesterKey("Y", 0x15), TesterKey("U", 0x16), TesterKey("I", 0x17), TesterKey("O", 0x18), TesterKey("P", 0x19), TesterKey("[", 0x1A),
             TesterKey("]", 0x1B), TesterKey("\\", 0x2B, false, 72));
 
-        AddTesterRow(
+        AddTesterRow(section,
             TesterKey("Caps", 0x3A, false, 86), TesterKey("A", 0x1E), TesterKey("S", 0x1F), TesterKey("D", 0x20), TesterKey("F", 0x21), TesterKey("G", 0x22),
             TesterKey("H", 0x23), TesterKey("J", 0x24), TesterKey("K", 0x25), TesterKey("L", 0x26), TesterKey(";", 0x27), TesterKey("'", 0x28),
             TesterKey("Enter", 0x1C, false, 100));
 
-        AddTesterRow(
+        AddTesterRow(section,
             TesterKey("Shift", 0x2A, false, 112), TesterKey("Z", 0x2C), TesterKey("X", 0x2D), TesterKey("C", 0x2E), TesterKey("V", 0x2F), TesterKey("B", 0x30),
             TesterKey("N", 0x31), TesterKey("M", 0x32), TesterKey(",", 0x33), TesterKey(".", 0x34), TesterKey("/", 0x35), TesterKey("R Shift", 0x36, false, 126));
 
-        AddTesterRow(
-            TesterKey("Ctrl", 0x1D), TesterKey("Win", 0x5B, true), TesterKey("Alt", 0x38), TesterKey("Space", 0x39, false, 270),
-            TesterKey("Right Alt", 0x38, true, 86), TesterKey("Menu", 0x5D, true), TesterKey("R Ctrl", 0x1D, true),
-            TesterKey("←", 0x4B, true), TesterKey("↑", 0x48, true), TesterKey("↓", 0x50, true), TesterKey("→", 0x4D, true));
+        AddTesterRow(section,
+            TesterKey("Ctrl", 0x1D, false, 58), TesterKey("Win", 0x5B, true, 54), TesterKey("Alt", 0x38, false, 54),
+            TesterKey("Space", 0x39, false, 280), TesterKey("Right Alt", 0x38, true, 76), TesterKey("Menu", 0x5D, true, 58),
+            TesterKey("R Ctrl", 0x1D, true, 68));
 
-        AddTesterRow(
-            TesterKey("Num", 0x45), TesterKey("/", 0x35, true), TesterKey("*", 0x37), TesterKey("-", 0x4A),
-            TesterKey("7", 0x47), TesterKey("8", 0x48), TesterKey("9", 0x49), TesterKey("+", 0x4E),
-            TesterKey("4", 0x4B), TesterKey("5", 0x4C), TesterKey("6", 0x4D), TesterKey("N Enter", 0x1C, true, 72));
+        return section;
     }
 
-    private void AddTesterRow(params TesterKeyDefinition[] keys)
+    private WpfGrid BuildNavigationSection()
     {
-        if (_keyboardTesterLayoutPanel is null)
+        var grid = BuildFixedKeyboardGrid(columns: 3, rows: 6);
+
+        AddKeyToGrid(grid, TesterKey("PrtSc", 0x37, true), 0, 0);
+        AddKeyToGrid(grid, TesterKey("ScrLk", 0x46), 0, 1);
+        AddKeyToGrid(grid, TesterKey("Pause", 0x45, true), 0, 2);
+
+        AddKeyToGrid(grid, TesterKey("Ins", 0x52, true), 1, 0);
+        AddKeyToGrid(grid, TesterKey("Home", 0x47, true), 1, 1);
+        AddKeyToGrid(grid, TesterKey("PgUp", 0x49, true), 1, 2);
+
+        AddKeyToGrid(grid, TesterKey("Del", 0x53, true), 2, 0);
+        AddKeyToGrid(grid, TesterKey("End", 0x4F, true), 2, 1);
+        AddKeyToGrid(grid, TesterKey("PgDn", 0x51, true), 2, 2);
+
+        AddKeyToGrid(grid, TesterKey("↑", 0x48, true), 4, 1);
+        AddKeyToGrid(grid, TesterKey("←", 0x4B, true), 5, 0);
+        AddKeyToGrid(grid, TesterKey("↓", 0x50, true), 5, 1);
+        AddKeyToGrid(grid, TesterKey("→", 0x4D, true), 5, 2);
+
+        return grid;
+    }
+
+    private WpfGrid BuildNumpadSection()
+    {
+        var grid = BuildFixedKeyboardGrid(columns: 4, rows: 5);
+
+        AddKeyToGrid(grid, TesterKey("Num", 0x45), 0, 0);
+        AddKeyToGrid(grid, TesterKey("/", 0x35, true), 0, 1);
+        AddKeyToGrid(grid, TesterKey("*", 0x37), 0, 2);
+        AddKeyToGrid(grid, TesterKey("-", 0x4A), 0, 3);
+
+        AddKeyToGrid(grid, TesterKey("7", 0x47), 1, 0);
+        AddKeyToGrid(grid, TesterKey("8", 0x48), 1, 1);
+        AddKeyToGrid(grid, TesterKey("9", 0x49), 1, 2);
+        AddKeyToGrid(grid, TesterKey("+", 0x4E), 1, 3, rowSpan: 2);
+
+        AddKeyToGrid(grid, TesterKey("4", 0x4B), 2, 0);
+        AddKeyToGrid(grid, TesterKey("5", 0x4C), 2, 1);
+        AddKeyToGrid(grid, TesterKey("6", 0x4D), 2, 2);
+
+        AddKeyToGrid(grid, TesterKey("1", 0x4F), 3, 0);
+        AddKeyToGrid(grid, TesterKey("2", 0x50), 3, 1);
+        AddKeyToGrid(grid, TesterKey("3", 0x51), 3, 2);
+        AddKeyToGrid(grid, TesterKey("Enter", 0x1C, true), 3, 3, rowSpan: 2);
+
+        AddKeyToGrid(grid, TesterKey("0", 0x52), 4, 0, columnSpan: 2);
+        AddKeyToGrid(grid, TesterKey(".", 0x53), 4, 2);
+
+        return grid;
+    }
+
+    private WpfGrid BuildFixedKeyboardGrid(int columns, int rows)
+    {
+        var grid = new WpfGrid();
+
+        for (var column = 0; column < columns; column++)
         {
-            return;
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(54) });
         }
 
-        var row = new StackPanel
+        for (var row = 0; row < rows; row++)
+        {
+            grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(50) });
+        }
+
+        return grid;
+    }
+
+    private void AddTesterRow(WpfStackPanel section, params FrameworkElement[] elements)
+    {
+        var row = new WpfStackPanel
         {
             Orientation = WpfOrientation.Horizontal,
             Margin = new Thickness(0, 0, 0, 8)
         };
 
-        foreach (var key in keys)
+        foreach (var element in elements)
         {
-            var button = new WpfButton
-            {
-                Content = key.Label,
-                Width = key.Width,
-                Height = 42,
-                Margin = new Thickness(3),
-                Padding = new Thickness(6, 4, 6, 4),
-                FontWeight = FontWeights.SemiBold,
-                Focusable = false,
-                IsHitTestVisible = false
-            };
-
-            var keyId = BuildTesterKeyId(key.ScanCode, key.IsExtendedKey);
-            _keyboardTesterButtons[keyId] = button;
-            _keyboardTesterStates[keyId] = "Normal";
-            ApplyTesterButtonState(button, "Normal");
-            row.Children.Add(button);
+            row.Children.Add(element);
         }
 
-        _keyboardTesterLayoutPanel.Children.Add(row);
+        section.Children.Add(row);
+    }
+
+    private WpfButton TesterKey(string label, ushort scanCode, bool isExtendedKey = false, double width = 48)
+    {
+        var key = new TesterKeyDefinition(label, scanCode, isExtendedKey, width);
+        var button = CreateTesterButton(key);
+        RegisterTesterButton(key, button);
+        return button;
+    }
+
+    private void AddKeyToGrid(WpfGrid grid, WpfButton button, int row, int column, int columnSpan = 1, int rowSpan = 1)
+    {
+        WpfGrid.SetRow(button, row);
+        WpfGrid.SetColumn(button, column);
+        WpfGrid.SetColumnSpan(button, columnSpan);
+        WpfGrid.SetRowSpan(button, rowSpan);
+        grid.Children.Add(button);
+    }
+
+    private WpfButton CreateTesterButton(TesterKeyDefinition key)
+    {
+        var button = new WpfButton
+        {
+            Content = key.Label,
+            Width = key.Width,
+            MinWidth = key.Width,
+            Height = double.NaN,
+            MinHeight = 42,
+            Margin = new Thickness(3),
+            Padding = new Thickness(6, 4, 6, 4),
+            FontWeight = FontWeights.SemiBold,
+            Focusable = false,
+            IsHitTestVisible = false
+        };
+
+        ApplyTesterButtonState(button, "Normal");
+        return button;
+    }
+
+    private void RegisterTesterButton(TesterKeyDefinition key, WpfButton button)
+    {
+        var keyId = BuildTesterKeyId(key.ScanCode, key.IsExtendedKey);
+        _keyboardTesterButtons[keyId] = button;
+        _keyboardTesterStates[keyId] = "Normal";
+    }
+
+    private static Border CreateHorizontalSpacer(double width)
+    {
+        return new Border { Width = width };
     }
 
     private void ApplyTesterButtonState(WpfButton button, string state)
@@ -437,24 +531,10 @@ public partial class MainWindow
         button.SetResourceReference(WpfControl.BorderBrushProperty, "BorderBrush");
     }
 
-    private static TesterKeyDefinition TesterKey(string label, ushort scanCode, bool isExtendedKey = false, double width = 48)
-    {
-        return new TesterKeyDefinition(label, scanCode, isExtendedKey, width);
-    }
-
     private static string BuildTesterKeyId(ushort scanCode, bool isExtendedKey)
     {
         return $"{scanCode}|{isExtendedKey}";
     }
 
     private sealed record TesterKeyDefinition(string Label, ushort ScanCode, bool IsExtendedKey, double Width);
-}
-
-public sealed class KeyboardTestHistoryItem
-{
-    public string Time { get; init; } = string.Empty;
-    public string Key { get; init; } = string.Empty;
-    public string ScanCode { get; init; } = string.Empty;
-    public string Extended { get; init; } = string.Empty;
-    public string Action { get; init; } = string.Empty;
 }
