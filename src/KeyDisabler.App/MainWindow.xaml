@@ -7,6 +7,8 @@
         MinWidth="980"
         MinHeight="680"
         Background="{DynamicResource WindowBackground}"
+        UseLayoutRounding="True"
+        SnapsToDevicePixels="True"
         Loaded="Window_Loaded"
         Closing="Window_Closing">
     <Grid Margin="24">
@@ -177,8 +179,7 @@
 
                                 <StackPanel Orientation="Horizontal" Margin="0,12,0,18">
                                     <Button Content="Capture Key" Click="CaptureRuleKey_Click" Margin="0,0,8,0" />
-                                    <Button Content="Add Block Rule" Click="AddRule_Click" Margin="0,0,8,0" />
-                                    <Button Content="Remove Selected" Click="RemoveRule_Click" />
+                                    <Button Content="Add Block Rule" Click="AddRule_Click" />
                                 </StackPanel>
 
                                 <Border Height="1" Background="{DynamicResource BorderBrush}" Margin="0,2,0,20" />
@@ -241,7 +242,16 @@
                                 <RowDefinition Height="*" />
                             </Grid.RowDefinitions>
 
-                            <TextBlock Grid.Row="0" Text="Saved block rules" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,14" />
+                            <Grid Grid.Row="0" Margin="0,0,0,14">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Saved Block Rules" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center" />
+                                <Button Grid.Column="1" Content="Remove Selected" Click="RemoveRule_Click" Margin="16,0,8,0" />
+                                <Button Grid.Column="2" Content="Reset All" Click="ResetBlockRules_Click" Margin="0" />
+                            </Grid>
                             <ListView Grid.Row="1" x:Name="RulesList" Margin="0,0,0,18">
                                 <ListView.View>
                                     <GridView>
@@ -252,10 +262,16 @@
                                 </ListView.View>
                             </ListView>
 
-                            <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,0,0,14">
+                            <Grid Grid.Row="2" Margin="0,0,0,14">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
                                 <TextBlock Text="Saved remap rules" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center" />
-                                <Button Content="Remove Selected Remap" Click="RemoveRemapRule_Click" Margin="16,0,0,0" />
-                            </StackPanel>
+                                <Button Grid.Column="1" Content="Remove Selected" Click="RemoveRemapRule_Click" Margin="16,0,8,0" />
+                                <Button Grid.Column="2" Content="Reset All" Click="ResetRemapRules_Click" Margin="0" />
+                            </Grid>
                             <ListView Grid.Row="3" x:Name="RemapRulesList">
                                 <ListView.View>
                                     <GridView>
@@ -272,72 +288,50 @@
             </TabItem>
 
             <TabItem Header="Keyboard Tester">
-                <Grid Margin="0,12,0,0">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="1.25*" />
-                        <ColumnDefinition Width="0.75*" />
-                    </Grid.ColumnDefinitions>
+                <Border Background="{DynamicResource CardBackground}" CornerRadius="18" Padding="22" Margin="0,12,0,0">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
 
-                    <Border Background="{DynamicResource CardBackground}" CornerRadius="18" Padding="22" Margin="0,0,12,0">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="*" />
-                            </Grid.RowDefinitions>
+                        <Grid Grid.Row="0" Margin="0,0,0,12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1.2*" />
+                                <ColumnDefinition Width="0.8*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
 
-                            <StackPanel Grid.Row="0">
-                                <TextBlock Text="Keyboard Tester" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" />
-                                <TextBlock Text="Select a keyboard, start testing, then press physical keys. The visual layout will highlight tested, blocked, and remapped keys."
-                                           TextWrapping="Wrap"
-                                           Foreground="{DynamicResource TextMuted}"
-                                           Margin="0,8,0,14" />
-
+                            <StackPanel Grid.Column="0" Margin="0,0,18,0">
                                 <TextBlock x:Name="TesterSelectedKeyboardText" Text="No keyboard selected" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" />
-                                <TextBlock x:Name="TesterDropdownHintText" Text="Keyboard selection will appear here." Foreground="{DynamicResource TextMuted}" Margin="0,4,0,8" TextWrapping="Wrap" />
-                                <ComboBox x:Name="TesterKeyboardCombo" DisplayMemberPath="DisplayName" Margin="0,0,0,12" />
-
-                                <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
-                                    <Button x:Name="ToggleKeyboardTesterButton" Content="Start Testing" Click="ToggleKeyboardTester_Click" Padding="18,10" FontWeight="SemiBold" Margin="0,0,8,0" />
-                                    <Button x:Name="ResetKeyboardTesterButton" Content="Reset Test" Click="ResetKeyboardTester_Click" Padding="18,10" />
-                                </StackPanel>
-
-                                <Border Background="{DynamicResource PanelBackground}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="14" Padding="14" Margin="0,0,0,14">
-                                    <StackPanel>
-                                        <TextBlock Text="Last tested key" Foreground="{DynamicResource TextMuted}" />
-                                        <TextBlock x:Name="TesterLastKeyText" Text="Press Start Testing, then press keys on the selected keyboard." FontSize="17" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" Margin="0,5,0,0" TextWrapping="Wrap" />
-                                        <TextBlock x:Name="TesterCountText" Text="0 visual key(s) tested" Foreground="{DynamicResource TextMuted}" Margin="0,8,0,0" />
-                                    </StackPanel>
-                                </Border>
+                                <TextBlock x:Name="TesterDropdownHintText" Text="Keyboard selection will appear here." Foreground="{DynamicResource TextMuted}" Margin="0,4,0,0" TextWrapping="Wrap" />
                             </StackPanel>
 
-                            <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
-                                <StackPanel x:Name="KeyboardTesterLayoutPanel" />
-                            </ScrollViewer>
+                            <ComboBox Grid.Column="1" x:Name="TesterKeyboardCombo" DisplayMemberPath="DisplayName" Margin="0,0,12,0" VerticalAlignment="Center" />
+
+                            <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                <Button x:Name="ToggleKeyboardTesterButton" Content="Start Testing" Click="ToggleKeyboardTester_Click" Padding="18,10" FontWeight="SemiBold" Margin="0,0,8,0" />
+                                <Button x:Name="ResetKeyboardTesterButton" Content="Reset Test" Click="ResetKeyboardTester_Click" Padding="18,10" Margin="0" />
+                            </StackPanel>
                         </Grid>
-                    </Border>
 
-                    <Border Grid.Column="1" Background="{DynamicResource CardBackground}" CornerRadius="18" Padding="22" Margin="12,0,0,0">
-                        <DockPanel>
-                            <TextBlock DockPanel.Dock="Top" Text="Test history" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,12" />
-                            <TextBlock DockPanel.Dock="Top" Text="Shows the latest key presses from the selected keyboard only."
-                                       Foreground="{DynamicResource TextMuted}"
-                                       TextWrapping="Wrap"
-                                       Margin="0,0,0,12" />
+                        <Border Grid.Row="1" Background="{DynamicResource PanelBackground}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="14" Padding="14" Margin="0,0,0,14">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock x:Name="TesterLastKeyText" Text="Press Start Testing, then press keys on the selected keyboard." FontSize="17" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" TextWrapping="Wrap" />
+                                <TextBlock Grid.Column="1" x:Name="TesterCountText" Text="0 visual key(s) tested" Foreground="{DynamicResource TextMuted}" Margin="18,0,0,0" VerticalAlignment="Center" />
+                            </Grid>
+                        </Border>
 
-                            <ListView x:Name="TesterHistoryList">
-                                <ListView.View>
-                                    <GridView>
-                                        <GridViewColumn Header="Time" DisplayMemberBinding="{Binding Time}" Width="70" />
-                                        <GridViewColumn Header="Key" DisplayMemberBinding="{Binding Key}" Width="110" />
-                                        <GridViewColumn Header="Scan" DisplayMemberBinding="{Binding ScanCode}" Width="60" />
-                                        <GridViewColumn Header="Ext" DisplayMemberBinding="{Binding Extended}" Width="50" />
-                                        <GridViewColumn Header="Action" DisplayMemberBinding="{Binding Action}" Width="130" />
-                                    </GridView>
-                                </ListView.View>
-                            </ListView>
-                        </DockPanel>
-                    </Border>
-                </Grid>
+                        <ScrollViewer Grid.Row="2" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+                            <StackPanel x:Name="KeyboardTesterLayoutPanel" />
+                        </ScrollViewer>
+                    </Grid>
+                </Border>
             </TabItem>
 
             <TabItem Header="Settings">
