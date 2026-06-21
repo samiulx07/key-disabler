@@ -4,6 +4,7 @@
 #define MyAppExeName "KeyDisabler.exe"
 #define SourceDir "..\..\publish"
 #define OutputDir "..\..\installer-output"
+#define MyAppUserModelID "Samslab.KeyDisabler"
 
 [Setup]
 AppId={{2F6243D7-1C94-4AA6-B98D-3943A9F6C614}
@@ -36,10 +37,10 @@ Name: "installdriver"; Description: "Install device-level keyboard driver"; Grou
 Source: "{#SourceDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
-Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
+Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\{#MyAppExeName}"; AppUserModelID: "{#MyAppUserModelID}"
 Name: "{group}\Uninstall {#MyAppName}"; Filename: "{uninstallexe}"
-Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
-Name: "{commonstartup}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: startupicon
+Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\{#MyAppExeName}"; AppUserModelID: "{#MyAppUserModelID}"; Tasks: desktopicon
+Name: "{commonstartup}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\{#MyAppExeName}"; AppUserModelID: "{#MyAppUserModelID}"; Tasks: startupicon
 
 [Run]
 Filename: "{app}\driver\install-interception.exe"; Parameters: "/install"; Description: "Install device-level keyboard driver"; Flags: runhidden waituntilterminated; Tasks: installdriver
