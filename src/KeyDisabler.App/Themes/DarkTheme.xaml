@@ -30,5 +30,7 @@
     <SolidColorBrush x:Key="TextBoxBorder" Color="#475569" />
     <SolidColorBrush x:Key="ListBackground" Color="#0F172A" />
 
-    <SolidColorBrush x:Key="InfoBackground" Color="#1E3A8A" />`n    <SolidColorBrush x:Key="InfoBorder" Color="#1E40AF" />`n</ResourceDictionary>
+    <SolidColorBrush x:Key="InfoBackground" Color="#1E3A8A" />
+    <SolidColorBrush x:Key="InfoBorder" Color="#1E40AF" />
+</ResourceDictionary>
 
