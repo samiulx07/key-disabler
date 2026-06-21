@@ -15,9 +15,7 @@ public static class ThemeService
         {
             if (e.Category == UserPreferenceCategory.General)
             {
-                // Re-apply current theme setting (it will detect system change if mode is System)
-                // Note: We need a way to know the current setting. For simplicity, we just trigger an event
-                // and let the MainWindow re-apply. But actually, we can just pass the setting in ApplyTheme.
+                ApplyTheme(initialTheme);
             }
         };
 
@@ -36,32 +34,32 @@ public static class ThemeService
         {
             useDarkTheme = false;
         }
-        else // System
+        else
         {
             useDarkTheme = IsSystemInDarkMode();
         }
 
         var themeName = useDarkTheme ? "DarkTheme.xaml" : "LightTheme.xaml";
-        var uri = new Uri($"pack://application:,,,/KeyDisabler.App;component/Themes/{themeName}", UriKind.Absolute);
+        var uri = new Uri($"pack://application:,,,/Themes/{themeName}", UriKind.Absolute);
 
         try
         {
             var dict = new ResourceDictionary { Source = uri };
-            
-            // Remove existing theme dictionaries
             var appResources = System.Windows.Application.Current.Resources.MergedDictionaries;
-            var oldTheme = appResources.FirstOrDefault(d => d.Source != null && d.Source.OriginalString.Contains("Theme.xaml"));
-            
-            if (oldTheme != null)
+            var oldThemes = appResources
+                .Where(d => d.Source != null && d.Source.OriginalString.Contains("Theme.xaml", StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            foreach (var oldTheme in oldThemes)
             {
                 appResources.Remove(oldTheme);
             }
-            
+
             appResources.Add(dict);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            // Ignore error if dictionary not found
+            StartupLogService.Write($"Theme load failed: {ex}");
         }
     }
 
@@ -71,12 +69,12 @@ public static class ThemeService
         {
             using var key = Registry.CurrentUser.OpenSubKey(RegistryKeyPath);
             var registryValueObject = key?.GetValue(RegistryValueName);
-            
+
             if (registryValueObject == null)
             {
                 return false;
             }
-            
+
             int registryValue = (int)registryValueObject;
             return registryValue == 0;
         }
