@@ -1,12 +1,33 @@
 using System.Collections.Specialized;
 using System.Diagnostics;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Threading;
 
 namespace KeyDisabler.App;
+
+internal static class MainWindowDashboardThemeBootstrap
+{
+    [ModuleInitializer]
+    internal static void Initialize()
+    {
+        EventManager.RegisterClassHandler(
+            typeof(MainWindow),
+            Window.LoadedEvent,
+            new RoutedEventHandler(OnMainWindowLoaded));
+    }
+
+    private static void OnMainWindowLoaded(object sender, RoutedEventArgs e)
+    {
+        if (sender is MainWindow window)
+        {
+            window.Dispatcher.BeginInvoke(new Action(window.InitializeDashboardThemeFeatures), DispatcherPriority.ApplicationIdle);
+        }
+    }
+}
 
 public partial class MainWindow
 {
