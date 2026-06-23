@@ -1,13 +1,17 @@
 using System.Runtime.CompilerServices;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Media;
+using System.Windows.Media.Effects;
 using System.Windows.Threading;
 using WpfBorder = System.Windows.Controls.Border;
 using WpfButton = System.Windows.Controls.Button;
+using WpfControl = System.Windows.Controls.Control;
 using WpfGrid = System.Windows.Controls.Grid;
+using WpfOrientation = System.Windows.Controls.Orientation;
 using WpfStackPanel = System.Windows.Controls.StackPanel;
 using WpfTextBlock = System.Windows.Controls.TextBlock;
-using WpfOrientation = System.Windows.Controls.Orientation;
 
 namespace KeyDisabler.App;
 
@@ -33,6 +37,10 @@ internal static class MainWindowKeyboardTesterFullLayoutBootstrap
 
 public partial class MainWindow
 {
+    private const double TesterKeyHeight = 50;
+    private const double TesterKeyWidth = 50;
+    private const double TesterKeyGap = 4;
+
     internal void ScheduleKeyboardTesterFullLayout()
     {
         var attempts = 0;
@@ -117,96 +125,247 @@ public partial class MainWindow
         _keyboardTesterButtons.Clear();
         _keyboardTesterStates.Clear();
 
-        AddFullKeyboardRow(
-            Key("Esc", 0x01), Gap(18),
-            Key("F1", 0x3B), Key("F2", 0x3C), Key("F3", 0x3D), Key("F4", 0x3E), Gap(12),
-            Key("F5", 0x3F), Key("F6", 0x40), Key("F7", 0x41), Key("F8", 0x42), Gap(12),
-            Key("F9", 0x43), Key("F10", 0x44), Key("F11", 0x57), Key("F12", 0x58), Gap(18),
-            Key("PrtSc", 0x37, true), Key("Scroll", 0x46), Key("Pause", 0x45, true));
+        var keyboardShell = new WpfBorder
+        {
+            CornerRadius = new CornerRadius(14),
+            BorderThickness = new Thickness(1),
+            Padding = new Thickness(18),
+            Margin = new Thickness(0, 4, 0, 0),
+            Background = new LinearGradientBrush(
+                Color.FromRgb(26, 24, 24),
+                Color.FromRgb(9, 9, 9),
+                new Point(0, 0),
+                new Point(0, 1)),
+            BorderBrush = new SolidColorBrush(Color.FromRgb(82, 42, 42)),
+            Effect = new DropShadowEffect
+            {
+                Color = Color.FromRgb(255, 29, 45),
+                BlurRadius = 18,
+                ShadowDepth = 0,
+                Opacity = 0.16
+            }
+        };
 
-        AddFullKeyboardRow(
-            Key("`", 0x29), Key("1", 0x02), Key("2", 0x03), Key("3", 0x04), Key("4", 0x05), Key("5", 0x06),
-            Key("6", 0x07), Key("7", 0x08), Key("8", 0x09), Key("9", 0x0A), Key("0", 0x0B), Key("-", 0x0C), Key("=", 0x0D), Key("Backspace", 0x0E, false, 108), Gap(18),
-            Key("Insert", 0x52, true), Key("Home", 0x47, true), Key("PgUp", 0x49, true), Gap(18),
-            Key("Num", 0x45), Key("/", 0x35, true), Key("*", 0x37), Key("-", 0x4A));
+        var keyboard = new WpfStackPanel
+        {
+            Orientation = WpfOrientation.Horizontal,
+            VerticalAlignment = VerticalAlignment.Bottom
+        };
 
-        AddFullKeyboardRow(
-            Key("Tab", 0x0F, false, 74), Key("Q", 0x10), Key("W", 0x11), Key("E", 0x12), Key("R", 0x13), Key("T", 0x14),
-            Key("Y", 0x15), Key("U", 0x16), Key("I", 0x17), Key("O", 0x18), Key("P", 0x19), Key("[", 0x1A), Key("]", 0x1B), Key("\\", 0x2B, false, 82), Gap(18),
-            Key("Delete", 0x53, true), Key("End", 0x4F, true), Key("PgDn", 0x51, true), Gap(18),
-            Key("7", 0x47), Key("8", 0x48), Key("9", 0x49), Key("+", 0x4E));
+        keyboard.Children.Add(BuildReferenceMainKeyboardSection());
+        keyboard.Children.Add(CreateReferenceSpacer(18));
+        keyboard.Children.Add(BuildReferenceNavigationSection());
+        keyboard.Children.Add(CreateReferenceSpacer(18));
+        keyboard.Children.Add(BuildReferenceNumpadSection());
 
-        AddFullKeyboardRow(
-            Key("Caps", 0x3A, false, 88), Key("A", 0x1E), Key("S", 0x1F), Key("D", 0x20), Key("F", 0x21), Key("G", 0x22),
-            Key("H", 0x23), Key("J", 0x24), Key("K", 0x25), Key("L", 0x26), Key(";", 0x27), Key("'", 0x28), Key("Enter", 0x1C, false, 130), Gap(202),
-            Key("4", 0x4B), Key("5", 0x4C), Key("6", 0x4D), Key("+", 0x4E));
-
-        AddFullKeyboardRow(
-            Key("Shift", 0x2A, false, 116), Key("Z", 0x2C), Key("X", 0x2D), Key("C", 0x2E), Key("V", 0x2F), Key("B", 0x30),
-            Key("N", 0x31), Key("M", 0x32), Key(",", 0x33), Key(".", 0x34), Key("/", 0x35), Key("R Shift", 0x36, false, 148), Gap(78),
-            Key("↑", 0x48, true), Gap(78),
-            Key("1", 0x4F), Key("2", 0x50), Key("3", 0x51), Key("Enter", 0x1C, true));
-
-        AddFullKeyboardRow(
-            Key("Ctrl", 0x1D), Key("Win", 0x5B, true), Key("Alt", 0x38), Key("Space", 0x39, false, 318), Key("Right Alt", 0x38, true, 86),
-            Key("Menu", 0x5D, true), Key("R Ctrl", 0x1D, true, 70), Gap(18),
-            Key("←", 0x4B, true), Key("↓", 0x50, true), Key("→", 0x4D, true), Gap(18),
-            Key("0", 0x52, false, 104), Key(".", 0x53), Key("Enter", 0x1C, true));
+        keyboardShell.Child = keyboard;
+        _keyboardTesterLayoutPanel.Children.Add(keyboardShell);
 
         UpdateTesterCountText();
     }
 
-    private void AddFullKeyboardRow(params FullKeyboardItem[] items)
+    private WpfStackPanel BuildReferenceMainKeyboardSection()
     {
-        if (_keyboardTesterLayoutPanel is null)
+        var section = new WpfStackPanel { Orientation = WpfOrientation.Vertical };
+
+        AddReferenceKeyboardRow(section,
+            ReferenceKey("Esc", 0x01, false, 56), CreateReferenceSpacer(36),
+            ReferenceKey("F1", 0x3B), ReferenceKey("F2", 0x3C), ReferenceKey("F3", 0x3D), ReferenceKey("F4", 0x3E), CreateReferenceSpacer(16),
+            ReferenceKey("F5", 0x3F), ReferenceKey("F6", 0x40), ReferenceKey("F7", 0x41), ReferenceKey("F8", 0x42), CreateReferenceSpacer(16),
+            ReferenceKey("F9", 0x43), ReferenceKey("F10", 0x44), ReferenceKey("F11", 0x57), ReferenceKey("F12", 0x58));
+
+        AddReferenceKeyboardRow(section,
+            ReferenceKey("~\n`", 0x29), ReferenceKey("!\n1", 0x02), ReferenceKey("@\n2", 0x03), ReferenceKey("#\n3", 0x04), ReferenceKey("$\n4", 0x05), ReferenceKey("%\n5", 0x06),
+            ReferenceKey("^\n6", 0x07), ReferenceKey("&&\n7", 0x08), ReferenceKey("*\n8", 0x09), ReferenceKey("(\n9", 0x0A), ReferenceKey(")\n0", 0x0B), ReferenceKey("_\n-", 0x0C),
+            ReferenceKey("+\n=", 0x0D), ReferenceKey("Backspace", 0x0E, false, 106));
+
+        AddReferenceKeyboardRow(section,
+            ReferenceKey("Tab\n↹", 0x0F, false, 76), ReferenceKey("Q", 0x10), ReferenceKey("W", 0x11), ReferenceKey("E", 0x12), ReferenceKey("R", 0x13), ReferenceKey("T", 0x14),
+            ReferenceKey("Y", 0x15), ReferenceKey("U", 0x16), ReferenceKey("I", 0x17), ReferenceKey("O", 0x18), ReferenceKey("P", 0x19), ReferenceKey("{\n[", 0x1A),
+            ReferenceKey("}\n]", 0x1B), ReferenceKey("|\n\\", 0x2B, false, 76));
+
+        AddReferenceKeyboardRow(section,
+            ReferenceKey("Caps\nLock", 0x3A, false, 92), ReferenceKey("A", 0x1E), ReferenceKey("S", 0x1F), ReferenceKey("D", 0x20), ReferenceKey("F", 0x21), ReferenceKey("G", 0x22),
+            ReferenceKey("H", 0x23), ReferenceKey("J", 0x24), ReferenceKey("K", 0x25), ReferenceKey("L", 0x26), ReferenceKey(":\n;", 0x27), ReferenceKey("\"\n'", 0x28),
+            ReferenceKey("Enter", 0x1C, false, 126));
+
+        AddReferenceKeyboardRow(section,
+            ReferenceKey("Shift", 0x2A, false, 116), ReferenceKey("Z", 0x2C), ReferenceKey("X", 0x2D), ReferenceKey("C", 0x2E), ReferenceKey("V", 0x2F), ReferenceKey("B", 0x30),
+            ReferenceKey("N", 0x31), ReferenceKey("M", 0x32), ReferenceKey("<\n,", 0x33), ReferenceKey(">\n.", 0x34), ReferenceKey("?\n/", 0x35), ReferenceKey("Shift", 0x36, false, 158));
+
+        AddReferenceKeyboardRow(section,
+            ReferenceKey("Ctrl", 0x1D, false, 62), ReferenceKey("⊞", 0x5B, true, 62), ReferenceKey("Alt", 0x38, false, 66),
+            ReferenceKey(string.Empty, 0x39, false, 304), ReferenceKey("Alt", 0x38, true, 62), ReferenceKey("⊞", 0x5B, true, 62),
+            ReferenceKey("▤", 0x5D, true, 62), ReferenceKey("Ctrl", 0x1D, true, 62));
+
+        return section;
+    }
+
+    private WpfGrid BuildReferenceNavigationSection()
+    {
+        var grid = CreateReferenceGrid(columns: 3, rows: 6);
+
+        AddReferenceKeyToGrid(grid, ReferenceKey("Print\nScreen", 0x37, true), 0, 0);
+        AddReferenceKeyToGrid(grid, ReferenceKey("Scroll\nLock", 0x46), 0, 1);
+        AddReferenceKeyToGrid(grid, ReferenceKey("Pause\nBreak", 0x45, true), 0, 2);
+
+        AddReferenceKeyToGrid(grid, ReferenceKey("Insert", 0x52, true), 1, 0);
+        AddReferenceKeyToGrid(grid, ReferenceKey("Home", 0x47, true), 1, 1);
+        AddReferenceKeyToGrid(grid, ReferenceKey("Page\nUp", 0x49, true), 1, 2);
+
+        AddReferenceKeyToGrid(grid, ReferenceKey("Delete", 0x53, true), 2, 0);
+        AddReferenceKeyToGrid(grid, ReferenceKey("End", 0x4F, true), 2, 1);
+        AddReferenceKeyToGrid(grid, ReferenceKey("Page\nDown", 0x51, true), 2, 2);
+
+        AddReferenceKeyToGrid(grid, ReferenceKey("↑", 0x48, true), 4, 1);
+        AddReferenceKeyToGrid(grid, ReferenceKey("←", 0x4B, true), 5, 0);
+        AddReferenceKeyToGrid(grid, ReferenceKey("↓", 0x50, true), 5, 1);
+        AddReferenceKeyToGrid(grid, ReferenceKey("→", 0x4D, true), 5, 2);
+
+        return grid;
+    }
+
+    private WpfGrid BuildReferenceNumpadSection()
+    {
+        var grid = CreateReferenceGrid(columns: 4, rows: 5);
+
+        AddReferenceKeyToGrid(grid, ReferenceKey("Num\nLock", 0x45), 0, 0);
+        AddReferenceKeyToGrid(grid, ReferenceKey("/", 0x35, true), 0, 1);
+        AddReferenceKeyToGrid(grid, ReferenceKey("*", 0x37), 0, 2);
+        AddReferenceKeyToGrid(grid, ReferenceKey("-", 0x4A), 0, 3);
+
+        AddReferenceKeyToGrid(grid, ReferenceKey("7\nHome", 0x47), 1, 0);
+        AddReferenceKeyToGrid(grid, ReferenceKey("8\n↑", 0x48), 1, 1);
+        AddReferenceKeyToGrid(grid, ReferenceKey("9\nPgUp", 0x49), 1, 2);
+        AddReferenceKeyToGrid(grid, ReferenceKey("+", 0x4E), 1, 3, rowSpan: 2);
+
+        AddReferenceKeyToGrid(grid, ReferenceKey("4\n←", 0x4B), 2, 0);
+        AddReferenceKeyToGrid(grid, ReferenceKey("5", 0x4C), 2, 1);
+        AddReferenceKeyToGrid(grid, ReferenceKey("6\n→", 0x4D), 2, 2);
+
+        AddReferenceKeyToGrid(grid, ReferenceKey("1\nEnd", 0x4F), 3, 0);
+        AddReferenceKeyToGrid(grid, ReferenceKey("2\n↓", 0x50), 3, 1);
+        AddReferenceKeyToGrid(grid, ReferenceKey("3\nPgDn", 0x51), 3, 2);
+        AddReferenceKeyToGrid(grid, ReferenceKey("Enter", 0x1C, true), 3, 3, rowSpan: 2);
+
+        AddReferenceKeyToGrid(grid, ReferenceKey("0\nIns", 0x52), 4, 0, columnSpan: 2);
+        AddReferenceKeyToGrid(grid, ReferenceKey(".\nDel", 0x53), 4, 2);
+
+        return grid;
+    }
+
+    private WpfGrid CreateReferenceGrid(int columns, int rows)
+    {
+        var grid = new WpfGrid();
+
+        for (var column = 0; column < columns; column++)
         {
-            return;
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(TesterKeyWidth + TesterKeyGap) });
         }
 
+        for (var row = 0; row < rows; row++)
+        {
+            grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(TesterKeyHeight + TesterKeyGap) });
+        }
+
+        return grid;
+    }
+
+    private void AddReferenceKeyboardRow(WpfStackPanel section, params FrameworkElement[] elements)
+    {
         var row = new WpfStackPanel
         {
             Orientation = WpfOrientation.Horizontal,
-            Margin = new Thickness(0, 0, 0, 8)
+            Margin = new Thickness(0, 0, 0, TesterKeyGap)
         };
 
-        foreach (var item in items)
+        foreach (var element in elements)
         {
-            if (item.IsGap)
-            {
-                row.Children.Add(new WpfBorder { Width = item.Width, Height = 42, Margin = new Thickness(3, 0, 3, 0) });
-                continue;
-            }
-
-            var button = new WpfButton
-            {
-                Content = item.Label,
-                Width = item.Width,
-                Height = 42,
-                Margin = new Thickness(3),
-                Padding = new Thickness(6, 4, 6, 4),
-                FontWeight = FontWeights.SemiBold,
-                Focusable = false,
-                IsHitTestVisible = false
-            };
-
-            var keyId = BuildTesterKeyId(item.ScanCode, item.IsExtendedKey);
-            _keyboardTesterButtons[keyId] = button;
-            _keyboardTesterStates[keyId] = "Normal";
-            ApplyTesterButtonState(button, "Normal");
-            row.Children.Add(button);
+            row.Children.Add(element);
         }
 
-        _keyboardTesterLayoutPanel.Children.Add(row);
+        section.Children.Add(row);
     }
 
-    private static FullKeyboardItem Key(string label, ushort scanCode, bool isExtendedKey = false, double width = 52)
+    private WpfButton ReferenceKey(string label, ushort scanCode, bool isExtendedKey = false, double width = TesterKeyWidth)
     {
-        return new FullKeyboardItem(label, scanCode, isExtendedKey, width, false);
+        var button = new WpfButton
+        {
+            Content = label,
+            Width = width,
+            MinWidth = width,
+            Height = TesterKeyHeight,
+            MinHeight = TesterKeyHeight,
+            Margin = new Thickness(2),
+            Padding = new Thickness(4),
+            FontSize = label.Contains('\n') ? 10.5 : 13,
+            FontWeight = FontWeights.SemiBold,
+            HorizontalContentAlignment = HorizontalAlignment.Center,
+            VerticalContentAlignment = VerticalAlignment.Center,
+            Focusable = false,
+            IsHitTestVisible = false,
+            Template = CreateReferenceKeyTemplate(),
+            Effect = new DropShadowEffect
+            {
+                Color = Colors.Black,
+                BlurRadius = 8,
+                ShadowDepth = 2,
+                Opacity = 0.75
+            }
+        };
+
+        var keyId = BuildTesterKeyId(scanCode, isExtendedKey);
+        _keyboardTesterButtons[keyId] = button;
+        _keyboardTesterStates[keyId] = "Normal";
+        ApplyTesterButtonState(button, "Normal");
+        return button;
     }
 
-    private static FullKeyboardItem Gap(double width)
+    private static ControlTemplate CreateReferenceKeyTemplate()
     {
-        return new FullKeyboardItem(string.Empty, 0, false, width, true);
+        var template = new ControlTemplate(typeof(WpfButton));
+
+        var outer = new FrameworkElementFactory(typeof(WpfBorder));
+        outer.SetValue(WpfBorder.CornerRadiusProperty, new CornerRadius(7));
+        outer.SetValue(WpfBorder.BorderThicknessProperty, new Thickness(1));
+        outer.SetBinding(WpfBorder.BackgroundProperty, new TemplateBindingExtension(WpfControl.BackgroundProperty));
+        outer.SetBinding(WpfBorder.BorderBrushProperty, new TemplateBindingExtension(WpfControl.BorderBrushProperty));
+        outer.SetValue(WpfBorder.PaddingProperty, new Thickness(2));
+
+        var inner = new FrameworkElementFactory(typeof(WpfBorder));
+        inner.SetValue(WpfBorder.CornerRadiusProperty, new CornerRadius(5));
+        inner.SetValue(WpfBorder.BorderThicknessProperty, new Thickness(1));
+        inner.SetValue(WpfBorder.BorderBrushProperty, new SolidColorBrush(Color.FromArgb(90, 255, 255, 255)));
+        inner.SetValue(WpfBorder.PaddingProperty, new Thickness(3));
+        inner.SetBinding(WpfBorder.BackgroundProperty, new TemplateBindingExtension(WpfControl.BackgroundProperty));
+
+        var presenter = new FrameworkElementFactory(typeof(ContentPresenter));
+        presenter.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Center);
+        presenter.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center);
+        presenter.SetValue(ContentPresenter.RecognizesAccessKeyProperty, true);
+        presenter.SetValue(ContentPresenter.SnapsToDevicePixelsProperty, true);
+
+        inner.AppendChild(presenter);
+        outer.AppendChild(inner);
+        template.VisualTree = outer;
+
+        return template;
+    }
+
+    private void AddReferenceKeyToGrid(WpfGrid grid, WpfButton button, int row, int column, int columnSpan = 1, int rowSpan = 1)
+    {
+        WpfGrid.SetRow(button, row);
+        WpfGrid.SetColumn(button, column);
+        WpfGrid.SetColumnSpan(button, columnSpan);
+        WpfGrid.SetRowSpan(button, rowSpan);
+        button.Height = double.NaN;
+        button.MinHeight = TesterKeyHeight;
+        grid.Children.Add(button);
+    }
+
+    private static WpfBorder CreateReferenceSpacer(double width)
+    {
+        return new WpfBorder { Width = width };
     }
 
     private static T? FindKeyboardLayoutAncestor<T>(DependencyObject start) where T : DependencyObject
@@ -242,6 +401,4 @@ public partial class MainWindow
             }
         }
     }
-
-    private sealed record FullKeyboardItem(string Label, ushort ScanCode, bool IsExtendedKey, double Width, bool IsGap);
 }
