@@ -107,7 +107,7 @@ public partial class MainWindow : Window
             return IntPtr.Zero;
         }
 
-        if (!_deviceBlockerService.IsAvailable)
+        if (!_deviceBlockerService.IsRunning)
         {
             _rawInputService.ProcessMessage(new IntPtr(msg), lParam);
         }
@@ -151,7 +151,7 @@ public partial class MainWindow : Window
 
     private void RawInputService_KeyPressed(object? sender, RawKeyEventArgs e)
     {
-        if (_deviceBlockerService.IsAvailable)
+        if (_deviceBlockerService.IsRunning)
         {
             return;
         }
@@ -166,14 +166,16 @@ public partial class MainWindow : Window
                 LastKeyText.Text = $"{e.KeyName} from {deviceName}";
             }
 
-            FooterText.Text = $"Driver missing. Detection only: {e.KeyName} from {deviceName}";
+            FooterText.Text = $"Detection only: {e.KeyName} from {deviceName}";
 
             if (_isDetectingDevice && device is not null)
             {
                 KeyboardList.SelectedItem = device;
                 RuleDeviceCombo.SelectedItem = device;
                 _isDetectingDevice = false;
-                UpdateStatus("Keyboard detected, but driver is missing");
+                UpdateStatus(device.Id.StartsWith("interception:", StringComparison.OrdinalIgnoreCase)
+                    ? "Keyboard detected and selected"
+                    : "Keyboard detected, but this source is detection-only");
                 _trayIconService?.ShowBalloon("Keyboard detected", device.DisplayName);
             }
         });
