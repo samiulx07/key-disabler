@@ -1,5 +1,5 @@
 #define MyAppName "Key Disabler"
-#define MyAppVersion "0.2.1"
+#define MyAppVersion "0.2.2"
 #define MyAppPublisher "Samiul Hasan"
 #define MyAppExeName "KeyDisabler.exe"
 #define SourceDir "..\..\publish"
