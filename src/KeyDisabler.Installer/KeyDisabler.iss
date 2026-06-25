@@ -16,6 +16,7 @@ DefaultGroupName={#MyAppName}
 DisableProgramGroupPage=yes
 OutputDir={#OutputDir}
 OutputBaseFilename=KeyDisablerSetup
+SetupIconFile=..\KeyDisabler.App\Assets\AppIcon.ico
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
