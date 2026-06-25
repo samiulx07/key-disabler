@@ -1,40 +1,27 @@
 # Key Disabler
 
-Key Disabler is a Windows standalone desktop utility for keyboard detection, full selected-keyboard disabling, saved device-specific key rules, tray behavior, startup restore, and installable packaging.
+Key Disabler is a Windows standalone desktop utility for keyboard detection, saved device-specific key rules, tray behavior, startup restore, and installable packaging.
 
-## Current phase
+## Current safe scope
 
-This repository currently contains:
-
-- WPF desktop app
-- device-specific keyboard listing through the Interception driver
-- full selected-keyboard disable / enable workflow
-- exact device + key rule management
-- local JSON settings storage
-- system tray support
-- Windows startup setting
-- persistent saved keyboard disables and key rules
-- GitHub Actions build for portable app and installer
-- Inno Setup installer
-
-## Full keyboard disable behavior
-
-Full keyboard disables are applied as:
+The current safe workflow is captured key rules only:
 
 ```text
-selected physical keyboard = disabled
+Detect keyboard -> Capture Key -> Save Captured Rule
 ```
 
-Example:
+This means a selected key can be blocked on one physical keyboard while the same key still works on another keyboard.
 
-```text
-Keyboard 1 laptop keyboard = disabled
-Keyboard 2 USB keyboard = allowed
-Keyboard 3 Bluetooth keyboard = allowed
-Keyboard 4 another USB keyboard = allowed
-```
+## Safety changes
 
-The selected keyboard stays disabled until it is enabled again in the app. Saved disabled-keyboard settings are restored after restart/login when the app starts with Windows.
+To prevent input lockout:
+
+- full-keyboard disable is paused and is not enforced
+- the blocker does not start automatically when there are no active per-key rules
+- Raw Input devices are detection-only and cannot be saved as enforceable rules
+- the installer does not install the experimental device-level driver by default
+- the Windows startup shortcut is unchecked by default
+- recovery shortcuts are added to the Start Menu
 
 ## Device-specific key behavior
 
@@ -53,9 +40,17 @@ Keyboard 3 + Space = allowed
 Keyboard 4 + Space = allowed
 ```
 
-Full-keyboard disable rules are checked before key rules. If a keyboard is fully disabled, all keys from that keyboard are blocked.
+Rules are matched with device identity plus scan code and extended-key state.
 
-This requires the Interception driver and `interception.dll`, which are bundled into the build artifact by GitHub Actions.
+## Paused feature
+
+Full selected-keyboard disable is intentionally paused until a timed test and auto-restore workflow exists.
+
+Do not re-enable full-keyboard enforcement without this safety flow:
+
+```text
+Select keyboard -> temporary test -> auto restore -> user confirms -> save rule
+```
 
 ## Build artifacts
 
@@ -66,7 +61,11 @@ KeyDisabler-portable-win-x64
 KeyDisabler-installer-win-x64
 ```
 
-Use the installer artifact for normal Windows installation.
+Use the installer artifact for normal Windows installation. GitHub Actions downloads artifacts as zip files. The installer artifact contains:
+
+```text
+KeyDisablerSetup.exe
+```
 
 ## Installer features
 
@@ -74,24 +73,29 @@ The installer creates:
 
 - Program Files installation
 - Start Menu shortcut
+- reset settings shortcut
+- uninstall device driver shortcut
 - optional Desktop shortcut
-- optional startup shortcut
-- optional device-level keyboard driver installation
+- optional startup shortcut, unchecked by default
+- optional experimental device-level keyboard driver installation, unchecked by default
 - Windows Apps & Features / Control Panel uninstall entry
 
-Installer output:
+## Emergency recovery
 
-```text
-KeyDisablerSetup.exe
+See [docs/emergency-recovery.md](docs/emergency-recovery.md).
+
+Fast recovery command from an Administrator Command Prompt:
+
+```bat
+taskkill /IM KeyDisabler.exe /F
+del "%APPDATA%\KeyDisabler\settings.json"
+"%ProgramFiles%\Key Disabler\driver\install-interception.exe" /uninstall
+shutdown /r /t 0
 ```
 
 ## Important note
 
-After installing the device-level driver, Windows may require a restart before the blocker works correctly.
-
-## Safety note
-
-The app prevents disabling the last enabled detected keyboard. Keep at least one keyboard enabled so you can recover easily.
+After installing or uninstalling the device-level driver, Windows may require a restart before input behavior returns to normal.
 
 ## Local portable build
 
