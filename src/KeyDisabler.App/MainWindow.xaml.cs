@@ -79,11 +79,10 @@ public partial class MainWindow : Window
             _ => 0
         };
 
-        _deviceBlockerService.Start();
         RefreshDevices();
         UpdateRuleCount();
         UpdateDeviceBlocker();
-        UpdateStatus(_deviceBlockerService.IsRunning ? "Device blocker active" : $"Driver not ready: {_deviceBlockerService.LastError}");
+        UpdateStatus(_deviceBlockerService.IsRunning ? "Device key rules active" : "Device blocker paused for safety");
 
         var handle = new WindowInteropHelper(this).Handle;
         _hwndSource = HwndSource.FromHwnd(handle);
@@ -244,41 +243,12 @@ public partial class MainWindow : Window
 
     private void DisableSelectedKeyboard_Click(object sender, RoutedEventArgs e)
     {
-        if (KeyboardList.SelectedItem is not KeyboardDevice device)
-        {
-            UpdateStatus("Select a keyboard first");
-            return;
-        }
-
-        if (IsKeyboardDisabled(device))
-        {
-            UpdateStatus("This keyboard is already disabled");
-            return;
-        }
-
-        var otherEnabledKeyboardExists = _devices
-            .Where(item => !IsSameKeyboard(item, device))
-            .Any(item => !IsKeyboardDisabled(item));
-
-        if (!otherEnabledKeyboardExists)
-        {
-            UpdateStatus("Safety block: cannot disable the last enabled keyboard");
-            return;
-        }
-
-        _disabledKeyboards.Add(new DisabledKeyboardRule
-        {
-            DeviceId = device.Id,
-            HardwareId = NormalizeHardwareId(device.DevicePath),
-            DeviceName = device.DisplayName,
-            IsEnabled = true
-        });
-
-        SaveSettingsFromUi();
-        UpdateDeviceBlocker();
-        UpdateRuleCount();
-        UpdateSelectedDeviceStatus();
-        UpdateStatus("Selected keyboard disabled and saved");
+        UpdateStatus("Full keyboard disable is paused for safety. Use captured key rules instead.");
+        System.Windows.MessageBox.Show(
+            "Full keyboard disable is currently paused to prevent input lockout. Use Detect by key press, Capture Key, then Add Key Rule to block only the broken key on the selected keyboard.",
+            "Safety protection",
+            System.Windows.MessageBoxButton.OK,
+            System.Windows.MessageBoxImage.Information);
     }
 
     private void EnableSelectedKeyboard_Click(object sender, RoutedEventArgs e)
@@ -303,7 +273,7 @@ public partial class MainWindow : Window
         UpdateDeviceBlocker();
         UpdateRuleCount();
         UpdateSelectedDeviceStatus();
-        UpdateStatus("Keyboard enabled again");
+        UpdateStatus("Saved full-keyboard disable entry removed");
     }
 
     private void AddRule_Click(object sender, RoutedEventArgs e)
@@ -311,6 +281,12 @@ public partial class MainWindow : Window
         if (RuleDeviceCombo.SelectedItem is not KeyboardDevice device)
         {
             UpdateStatus("Select a keyboard first");
+            return;
+        }
+
+        if (!device.Id.StartsWith("interception:", StringComparison.OrdinalIgnoreCase))
+        {
+            UpdateStatus("This device is detection-only. Install the driver, restart Windows, then detect the keyboard again.");
             return;
         }
 
@@ -535,7 +511,7 @@ public partial class MainWindow : Window
         foreach (var rule in _rules)
         {
             var matchedDevice = FindDeviceForSavedRule(rule.DeviceHardwareId, rule.DeviceId);
-            if (matchedDevice is null)
+            if (matchedDevice is null || !matchedDevice.Id.StartsWith("interception:", StringComparison.OrdinalIgnoreCase))
             {
                 continue;
             }
@@ -661,7 +637,7 @@ public partial class MainWindow : Window
     private void UpdateRuleCount()
     {
         var keyRuleText = _rules.Count == 1 ? "1 key rule" : $"{_rules.Count} key rules";
-        var disabledKeyboardText = _disabledKeyboards.Count == 1 ? "1 disabled keyboard" : $"{_disabledKeyboards.Count} disabled keyboards";
+        var disabledKeyboardText = _disabledKeyboards.Count == 1 ? "1 paused full-keyboard entry" : $"{_disabledKeyboards.Count} paused full-keyboard entries";
         RuleCountText.Text = $"{keyRuleText}, {disabledKeyboardText}";
     }
 
@@ -674,7 +650,7 @@ public partial class MainWindow : Window
         }
 
         SelectedDeviceStatusText.Text = IsKeyboardDisabled(device)
-            ? "Status: disabled"
+            ? "Status: saved full-keyboard entry paused"
             : "Status: enabled";
     }
 
