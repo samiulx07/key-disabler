@@ -1,5 +1,5 @@
 #define MyAppName "Key Disabler"
-#define MyAppVersion "0.2.0"
+#define MyAppVersion "0.2.1"
 #define MyAppPublisher "Samiul Hasan"
 #define MyAppExeName "KeyDisabler.exe"
 #define SourceDir "..\..\publish"
@@ -30,20 +30,22 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Tasks]
 Name: "desktopicon"; Description: "Create a desktop shortcut"; GroupDescription: "Additional shortcuts:"; Flags: checkedonce
-Name: "startupicon"; Description: "Start Key Disabler with Windows"; GroupDescription: "Startup options:"; Flags: checkedonce
-Name: "installdriver"; Description: "Install device-level keyboard driver"; GroupDescription: "Driver options:"; Flags: checkedonce
+Name: "startupicon"; Description: "Start Key Disabler with Windows"; GroupDescription: "Startup options:"; Flags: unchecked
+Name: "installdriver"; Description: "Install experimental device-level keyboard driver"; GroupDescription: "Driver options:"; Flags: unchecked
 
 [Files]
 Source: "{#SourceDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\{#MyAppExeName}"; AppUserModelID: "{#MyAppUserModelID}"
+Name: "{group}\Reset {#MyAppName} Settings"; Filename: "{app}\{#MyAppExeName}"; Parameters: "--clear-settings"; IconFilename: "{app}\{#MyAppExeName}"; AppUserModelID: "{#MyAppUserModelID}"
+Name: "{group}\Uninstall {#MyAppName} Device Driver"; Filename: "{app}\driver\install-interception.exe"; Parameters: "/uninstall"; WorkingDir: "{app}\driver"; IconFilename: "{app}\{#MyAppExeName}"
 Name: "{group}\Uninstall {#MyAppName}"; Filename: "{uninstallexe}"
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\{#MyAppExeName}"; AppUserModelID: "{#MyAppUserModelID}"; Tasks: desktopicon
-Name: "{commonstartup}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\{#MyAppExeName}"; AppUserModelID: "{#MyAppUserModelID}"; Tasks: startupicon
+Name: "{commonstartup}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Parameters: "--minimized"; IconFilename: "{app}\{#MyAppExeName}"; AppUserModelID: "{#MyAppUserModelID}"; Tasks: startupicon
 
 [Run]
-Filename: "{app}\driver\install-interception.exe"; Parameters: "/install"; Description: "Install device-level keyboard driver"; Flags: runhidden waituntilterminated; Tasks: installdriver
+Filename: "{app}\driver\install-interception.exe"; Parameters: "/install"; Description: "Install experimental device-level keyboard driver"; Flags: runhidden waituntilterminated; Tasks: installdriver
 Filename: "{app}\{#MyAppExeName}"; Description: "Launch {#MyAppName}"; Flags: nowait postinstall skipifsilent
 
 [UninstallRun]
@@ -52,3 +54,9 @@ Filename: "{app}\driver\install-interception.exe"; Parameters: "/uninstall"; Fla
 [UninstallDelete]
 Type: filesandordirs; Name: "{app}"
 Type: filesandordirs; Name: "{userappdata}\KeyDisabler"
+
+[Code]
+function NeedsRestart(): Boolean;
+begin
+  Result := WizardIsTaskSelected('installdriver');
+end;
