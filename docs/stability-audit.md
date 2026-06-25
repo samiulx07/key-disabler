@@ -10,6 +10,10 @@ Detect keyboard -> Capture Key -> Save Captured Rule
 
 Full keyboard control is paused in the UI and enforcement service until a timed verification workflow is implemented.
 
+## Safety build
+
+Current safety build version: `0.2.2`.
+
 ## Fixes applied
 
 - Removed the unsafe global keyboard hook fallback.
@@ -24,6 +28,7 @@ Full keyboard control is paused in the UI and enforcement service until a timed 
 - Changed installer defaults so the experimental driver and Windows startup shortcut are unchecked.
 - Added Start Menu recovery shortcuts for settings reset and driver uninstall.
 - Added emergency recovery documentation.
+- Updated manual workflow runs so direct release assets are published: installer `.exe` and portable `.zip`.
 
 ## Required test workflow
 
