@@ -115,7 +115,7 @@ public sealed class DeviceKeyboardBlockerService : IDisposable
     {
         var activeRules = rules
             .Where(rule => rule.IsEnabled)
-            .Where(rule => !string.IsNullOrWhiteSpace(rule.DeviceId))
+            .Where(rule => IsInterceptionDeviceId(rule.DeviceId))
             .Where(rule => rule.ScanCode > 0)
             .GroupBy(BuildRuleKey, StringComparer.OrdinalIgnoreCase)
             .Select(group => group.Last())
@@ -148,6 +148,7 @@ public sealed class DeviceKeyboardBlockerService : IDisposable
     {
         var activeRemapRules = remapRules
             .Where(rule => rule.IsEnabled)
+            .Where(rule => IsInterceptionDeviceId(rule.DeviceId))
             .Where(rule => rule.FromScanCode > 0)
             .Where(rule => rule.ToScanCode > 0)
             .ToList();
@@ -158,10 +159,7 @@ public sealed class DeviceKeyboardBlockerService : IDisposable
 
             foreach (var rule in activeRemapRules)
             {
-                if (!string.IsNullOrWhiteSpace(rule.DeviceId))
-                {
-                    _remapRulesByDeviceAndKey[BuildRuleKey(rule.DeviceId, rule.FromScanCode, rule.FromIsExtendedKey)] = rule;
-                }
+                _remapRulesByDeviceAndKey[BuildRuleKey(rule.DeviceId, rule.FromScanCode, rule.FromIsExtendedKey)] = rule;
 
                 var hardwareId = NormalizeHardwareId(rule.DeviceHardwareId);
                 if (!string.IsNullOrWhiteSpace(hardwareId))
@@ -409,6 +407,12 @@ public sealed class DeviceKeyboardBlockerService : IDisposable
         return string.IsNullOrWhiteSpace(deviceIdOrHardwareId)
             ? string.Empty
             : $"{deviceIdOrHardwareId}|{scanCode}|{isExtended}";
+    }
+
+    private static bool IsInterceptionDeviceId(string deviceId)
+    {
+        return !string.IsNullOrWhiteSpace(deviceId) &&
+               deviceId.StartsWith("interception:", StringComparison.OrdinalIgnoreCase);
     }
 
     private static string NormalizeHardwareId(string value)
