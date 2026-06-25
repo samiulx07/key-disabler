@@ -90,6 +90,7 @@ public partial class MainWindow
         if (FindVisualChildByName<WpfBorder>(tabItem, "TabBorder") is WpfBorder border)
         {
             border.CornerRadius = new CornerRadius(14, 14, 14, 14);
+            border.SnapsToDevicePixels = false;
         }
 
         tabItem.SetResourceReference(

@@ -156,16 +156,14 @@
                         <ControlTemplate TargetType="{x:Type TabItem}">
                             <Grid Background="Transparent"
                                   ClipToBounds="False"
-                                  SnapsToDevicePixels="True"
                                   UseLayoutRounding="True">
                                 <Border x:Name="TabBorder"
                                         Background="{TemplateBinding Background}"
                                         BorderBrush="{TemplateBinding BorderBrush}"
-                                        BorderThickness="1"
+                                        BorderThickness="0"
                                         CornerRadius="14"
                                         Padding="{TemplateBinding Padding}"
-                                        ClipToBounds="False"
-                                        SnapsToDevicePixels="True">
+                                        ClipToBounds="False">
                                     <ContentPresenter x:Name="ContentSite"
                                                       ContentSource="Header"
                                                       HorizontalAlignment="Center"
@@ -184,6 +182,7 @@
                                     <Setter Property="Background" Value="{DynamicResource TabSelectedBackground}" />
                                     <Setter Property="BorderBrush" Value="{DynamicResource InfoBorder}" />
                                     <Setter Property="Foreground" Value="{DynamicResource TabSelectedForeground}" />
+                                    <Setter TargetName="TabBorder" Property="BorderThickness" Value="1" />
                                     <Setter TargetName="TabBorder" Property="CornerRadius" Value="14" />
                                 </Trigger>
                                 <Trigger Property="IsEnabled" Value="False">
