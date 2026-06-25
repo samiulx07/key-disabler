@@ -12,7 +12,14 @@ GitHub Actions publishes two artifacts:
 GitHub Actions artifact downloads are always zip-wrapped. The installer artifact contains:
 
 ```text
-KeyDisablerSetup.exe
+KeyDisablerSetup-win-x64.exe
+```
+
+For direct `.exe` download, run the workflow manually from GitHub Actions. Manual runs also publish a prerelease with these release assets:
+
+```text
+KeyDisablerSetup-win-x64.exe
+KeyDisabler-portable-win-x64.zip
 ```
 
 ## Installer features
