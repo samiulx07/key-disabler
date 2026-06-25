@@ -10,10 +10,10 @@
     <ApplicationIcon>Assets\AppIcon.ico</ApplicationIcon>
     <AssemblyName>KeyDisabler</AssemblyName>
     <RootNamespace>KeyDisabler.App</RootNamespace>
-    <Version>0.2.1</Version>
+    <Version>0.2.2</Version>
     <Authors>Samiul Hasan</Authors>
     <Product>Key Disabler</Product>
-    <Description>Standalone Windows utility for per-device keyboard rule management.</Description>
+    <Description>Standalone Windows utility for safer per-device keyboard rule management.</Description>
   </PropertyGroup>
 
   <ItemGroup>
