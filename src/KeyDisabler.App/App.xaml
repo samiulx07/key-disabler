@@ -39,6 +39,7 @@
                 <Setter Property="Background" Value="{DynamicResource DropdownBackground}" />
                 <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
                 <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                <Setter Property="SnapsToDevicePixels" Value="True" />
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="{x:Type ComboBoxItem}">
@@ -51,12 +52,20 @@
                             <ControlTemplate.Triggers>
                                 <Trigger Property="IsHighlighted" Value="True">
                                     <Setter TargetName="ItemBorder" Property="Background" Value="{DynamicResource DropdownHoverBackground}" />
-                                    <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+                                    <Setter Property="Foreground" Value="{DynamicResource DropdownHoverForeground}" />
                                 </Trigger>
                                 <Trigger Property="IsSelected" Value="True">
                                     <Setter TargetName="ItemBorder" Property="Background" Value="{DynamicResource DropdownSelectedBackground}" />
-                                    <Setter Property="Foreground" Value="{DynamicResource TabSelectedForeground}" />
+                                    <Setter Property="Foreground" Value="{DynamicResource DropdownSelectedForeground}" />
                                 </Trigger>
+                                <MultiTrigger>
+                                    <MultiTrigger.Conditions>
+                                        <Condition Property="IsSelected" Value="True" />
+                                        <Condition Property="IsHighlighted" Value="True" />
+                                    </MultiTrigger.Conditions>
+                                    <Setter TargetName="ItemBorder" Property="Background" Value="{DynamicResource DropdownSelectedBackground}" />
+                                    <Setter Property="Foreground" Value="{DynamicResource DropdownSelectedForeground}" />
+                                </MultiTrigger>
                                 <Trigger Property="IsEnabled" Value="False">
                                     <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
                                 </Trigger>
