@@ -21,8 +21,10 @@
     <SolidColorBrush x:Key="TabUnselectedForeground" Color="#991B1B" />
 
     <SolidColorBrush x:Key="DropdownBackground" Color="#FFFFFF" />
-    <SolidColorBrush x:Key="DropdownHoverBackground" Color="#FFF1F1" />
-    <SolidColorBrush x:Key="DropdownSelectedBackground" Color="#FFE4E4" />
+    <SolidColorBrush x:Key="DropdownHoverBackground" Color="#FEE2E2" />
+    <SolidColorBrush x:Key="DropdownHoverForeground" Color="#111827" />
+    <SolidColorBrush x:Key="DropdownSelectedBackground" Color="#FECACA" />
+    <SolidColorBrush x:Key="DropdownSelectedForeground" Color="#111827" />
 
     <SolidColorBrush x:Key="ButtonHoverBackground" Color="#FFF1F1" />
     <SolidColorBrush x:Key="ButtonPressedBackground" Color="#FFE4E4" />
