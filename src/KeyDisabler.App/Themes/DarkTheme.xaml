@@ -22,7 +22,9 @@
 
     <SolidColorBrush x:Key="DropdownBackground" Color="#111827" />
     <SolidColorBrush x:Key="DropdownHoverBackground" Color="#3A1111" />
+    <SolidColorBrush x:Key="DropdownHoverForeground" Color="#F8FAFC" />
     <SolidColorBrush x:Key="DropdownSelectedBackground" Color="#5B1A1A" />
+    <SolidColorBrush x:Key="DropdownSelectedForeground" Color="#FFFFFF" />
 
     <SolidColorBrush x:Key="ButtonHoverBackground" Color="#3A1111" />
     <SolidColorBrush x:Key="ButtonPressedBackground" Color="#5B1A1A" />
