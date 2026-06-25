@@ -9,14 +9,13 @@ public sealed class DeviceKeyboardBlockerService : IDisposable
     private readonly InterceptionNative.InterceptionPredicate _keyboardPredicate;
     private readonly Dictionary<string, KeyboardRule> _rulesByDeviceAndKey = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, KeyRemapRule> _remapRulesByDeviceAndKey = new(StringComparer.OrdinalIgnoreCase);
-    private readonly HashSet<string> _disabledDeviceIds = new(StringComparer.OrdinalIgnoreCase);
-    private readonly HashSet<string> _disabledHardwareIds = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, KeyboardDevice> _deviceCache = new(StringComparer.OrdinalIgnoreCase);
 
     private CancellationTokenSource? _cancellationTokenSource;
     private Task? _workerTask;
     private IntPtr _context = IntPtr.Zero;
     private bool _isDisposed;
+    private bool _hasActiveRules;
 
     public DeviceKeyboardBlockerService()
     {
@@ -28,6 +27,16 @@ public sealed class DeviceKeyboardBlockerService : IDisposable
     public bool IsAvailable { get; private set; }
     public string LastError { get; private set; } = string.Empty;
     public bool IsRunning => _workerTask is { IsCompleted: false };
+    public bool HasActiveRules
+    {
+        get
+        {
+            lock (_syncRoot)
+            {
+                return _hasActiveRules;
+            }
+        }
+    }
 
     public IReadOnlyList<KeyboardDevice> GetKeyboardDevices()
     {
@@ -81,6 +90,13 @@ public sealed class DeviceKeyboardBlockerService : IDisposable
 
     public void Start()
     {
+        if (!HasActiveRules)
+        {
+            StopWorkerAndDestroyContext();
+            LastError = "No active device-level rules. Blocker is paused for safety.";
+            return;
+        }
+
         if (!EnsureContext() || IsRunning)
         {
             return;
@@ -105,21 +121,11 @@ public sealed class DeviceKeyboardBlockerService : IDisposable
             .Select(group => group.Last())
             .ToDictionary(BuildRuleKey, rule => rule, StringComparer.OrdinalIgnoreCase);
 
-        var disabledDeviceIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        var disabledHardwareIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-        foreach (var disabledRule in disabledKeyboardRules.Where(r => r.IsEnabled))
-        {
-            if (!string.IsNullOrWhiteSpace(disabledRule.DeviceId))
-            {
-                disabledDeviceIds.Add(disabledRule.DeviceId);
-            }
-
-            if (!string.IsNullOrWhiteSpace(disabledRule.HardwareId))
-            {
-                disabledHardwareIds.Add(NormalizeHardwareId(disabledRule.HardwareId));
-            }
-        }
+        // Full-keyboard blocking is intentionally paused. A bad saved full-keyboard rule can
+        // lock the user out of all input devices, so only captured per-key rules are enforced.
+        // The disabledKeyboardRules collection is still saved and shown in the UI, but it is
+        // not applied until a timed test + auto-restore flow exists.
+        _ = disabledKeyboardRules;
 
         lock (_syncRoot)
         {
@@ -129,17 +135,12 @@ public sealed class DeviceKeyboardBlockerService : IDisposable
                 _rulesByDeviceAndKey[pair.Key] = pair.Value;
             }
 
-            _disabledDeviceIds.Clear();
-            foreach (var id in disabledDeviceIds)
-            {
-                _disabledDeviceIds.Add(id);
-            }
+            _hasActiveRules = _rulesByDeviceAndKey.Count > 0 || _remapRulesByDeviceAndKey.Count > 0;
+        }
 
-            _disabledHardwareIds.Clear();
-            foreach (var id in disabledHardwareIds)
-            {
-                _disabledHardwareIds.Add(id);
-            }
+        if (!HasActiveRules)
+        {
+            StopWorkerAndDestroyContext();
         }
     }
 
@@ -168,6 +169,13 @@ public sealed class DeviceKeyboardBlockerService : IDisposable
                     _remapRulesByDeviceAndKey[BuildRuleKey(hardwareId, rule.FromScanCode, rule.FromIsExtendedKey)] = rule;
                 }
             }
+
+            _hasActiveRules = _rulesByDeviceAndKey.Count > 0 || _remapRulesByDeviceAndKey.Count > 0;
+        }
+
+        if (!HasActiveRules)
+        {
+            StopWorkerAndDestroyContext();
         }
     }
 
@@ -223,33 +231,20 @@ public sealed class DeviceKeyboardBlockerService : IDisposable
 
             lock (_syncRoot)
             {
-                if (_disabledDeviceIds.Contains(deviceId))
+                var deviceRuleKey = BuildRuleKey(deviceId, originalScanCode, isExtended);
+                var hardwareRuleKey = BuildRuleKey(normalizedHardwareId, originalScanCode, isExtended);
+
+                if (_rulesByDeviceAndKey.ContainsKey(deviceRuleKey) || _rulesByDeviceAndKey.ContainsKey(hardwareRuleKey))
                 {
                     shouldStop = true;
                 }
-
-                if (!shouldStop && !string.IsNullOrWhiteSpace(normalizedHardwareId) && _disabledHardwareIds.Contains(normalizedHardwareId))
+                else if (_remapRulesByDeviceAndKey.TryGetValue(deviceRuleKey, out var deviceRemapRule))
                 {
-                    shouldStop = true;
+                    remapRule = deviceRemapRule;
                 }
-
-                if (!shouldStop)
+                else if (_remapRulesByDeviceAndKey.TryGetValue(hardwareRuleKey, out var hardwareRemapRule))
                 {
-                    var deviceRuleKey = BuildRuleKey(deviceId, originalScanCode, isExtended);
-                    var hardwareRuleKey = BuildRuleKey(normalizedHardwareId, originalScanCode, isExtended);
-
-                    if (_rulesByDeviceAndKey.ContainsKey(deviceRuleKey) || _rulesByDeviceAndKey.ContainsKey(hardwareRuleKey))
-                    {
-                        shouldStop = true;
-                    }
-                    else if (_remapRulesByDeviceAndKey.TryGetValue(deviceRuleKey, out var deviceRemapRule))
-                    {
-                        remapRule = deviceRemapRule;
-                    }
-                    else if (_remapRulesByDeviceAndKey.TryGetValue(hardwareRuleKey, out var hardwareRemapRule))
-                    {
-                        remapRule = hardwareRemapRule;
-                    }
+                    remapRule = hardwareRemapRule;
                 }
             }
 
@@ -411,7 +406,9 @@ public sealed class DeviceKeyboardBlockerService : IDisposable
 
     private static string BuildRuleKey(string deviceIdOrHardwareId, ushort scanCode, bool isExtended)
     {
-        return $"{deviceIdOrHardwareId}|{scanCode}|{isExtended}";
+        return string.IsNullOrWhiteSpace(deviceIdOrHardwareId)
+            ? string.Empty
+            : $"{deviceIdOrHardwareId}|{scanCode}|{isExtended}";
     }
 
     private static string NormalizeHardwareId(string value)
