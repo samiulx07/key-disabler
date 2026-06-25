@@ -110,12 +110,13 @@
                                         CornerRadius="16"
                                         Padding="6"
                                         Margin="0,0,0,14"
-                                        ClipToBounds="True"
+                                        ClipToBounds="False"
                                         SnapsToDevicePixels="True">
                                     <TabPanel x:Name="HeaderPanel"
                                               IsItemsHost="True"
                                               KeyboardNavigation.TabIndex="1"
-                                              Panel.ZIndex="1" />
+                                              Panel.ZIndex="1"
+                                              ClipToBounds="False" />
                                 </Border>
 
                                 <ContentPresenter Grid.Row="1"
@@ -128,44 +129,53 @@
             </Style>
 
             <Style TargetType="TabItem">
+                <Setter Property="OverridesDefaultStyle" Value="True" />
                 <Setter Property="Foreground" Value="{DynamicResource TabUnselectedForeground}" />
                 <Setter Property="Background" Value="Transparent" />
                 <Setter Property="BorderBrush" Value="Transparent" />
                 <Setter Property="FontSize" Value="14" />
                 <Setter Property="FontWeight" Value="SemiBold" />
                 <Setter Property="Padding" Value="20,12" />
-                <Setter Property="Margin" Value="0,0,8,0" />
+                <Setter Property="Margin" Value="0,0,10,0" />
                 <Setter Property="MinHeight" Value="42" />
                 <Setter Property="Cursor" Value="Hand" />
+                <Setter Property="Panel.ZIndex" Value="0" />
                 <Setter Property="SnapsToDevicePixels" Value="True" />
                 <Setter Property="UseLayoutRounding" Value="True" />
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="{x:Type TabItem}">
-                            <Grid Background="Transparent" ClipToBounds="False" SnapsToDevicePixels="True" UseLayoutRounding="True">
+                            <Grid Background="Transparent"
+                                  ClipToBounds="False"
+                                  SnapsToDevicePixels="True"
+                                  UseLayoutRounding="True">
                                 <Border x:Name="TabBorder"
                                         Background="{TemplateBinding Background}"
                                         BorderBrush="{TemplateBinding BorderBrush}"
                                         BorderThickness="1"
-                                        CornerRadius="14,14,14,14"
+                                        CornerRadius="14"
                                         Padding="{TemplateBinding Padding}"
-                                        ClipToBounds="True"
+                                        ClipToBounds="False"
                                         SnapsToDevicePixels="True">
                                     <ContentPresenter x:Name="ContentSite"
                                                       ContentSource="Header"
                                                       HorizontalAlignment="Center"
-                                                      VerticalAlignment="Center" />
+                                                      VerticalAlignment="Center"
+                                                      RecognizesAccessKey="True" />
                                 </Border>
                             </Grid>
                             <ControlTemplate.Triggers>
                                 <Trigger Property="IsMouseOver" Value="True">
                                     <Setter Property="Background" Value="{DynamicResource TabHoverBackground}" />
                                     <Setter Property="Foreground" Value="{DynamicResource TextPrimary}" />
+                                    <Setter TargetName="TabBorder" Property="CornerRadius" Value="14" />
                                 </Trigger>
                                 <Trigger Property="IsSelected" Value="True">
+                                    <Setter Property="Panel.ZIndex" Value="10" />
                                     <Setter Property="Background" Value="{DynamicResource TabSelectedBackground}" />
                                     <Setter Property="BorderBrush" Value="{DynamicResource InfoBorder}" />
                                     <Setter Property="Foreground" Value="{DynamicResource TabSelectedForeground}" />
+                                    <Setter TargetName="TabBorder" Property="CornerRadius" Value="14" />
                                 </Trigger>
                                 <Trigger Property="IsEnabled" Value="False">
                                     <Setter Property="Foreground" Value="{DynamicResource TextMuted}" />
