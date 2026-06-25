@@ -158,7 +158,7 @@ public partial class MainWindow : Window
 
         Dispatcher.Invoke(() =>
         {
-            var device = _devices.FirstOrDefault(item => string.Equals(item.Id, e.DeviceId, StringComparison.OrdinalIgnoreCase));
+            var device = FindDeviceForSavedRule(e.DeviceId, e.DeviceId);
             var deviceName = device?.DisplayName ?? "Unknown keyboard";
 
             if (_isDashboardDetecting)
