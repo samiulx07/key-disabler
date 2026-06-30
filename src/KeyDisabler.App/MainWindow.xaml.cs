@@ -638,9 +638,7 @@ public partial class MainWindow : Window
 
     private void UpdateRuleCount()
     {
-        var keyRuleText = _rules.Count == 1 ? "1 key rule" : $"{_rules.Count} key rules";
-        var disabledKeyboardText = _disabledKeyboards.Count == 1 ? "1 paused full-keyboard entry" : $"{_disabledKeyboards.Count} paused full-keyboard entries";
-        RuleCountText.Text = $"{keyRuleText}, {disabledKeyboardText}";
+        UpdateProtectionSummary();
     }
 
     private void UpdateSelectedDeviceStatus()
