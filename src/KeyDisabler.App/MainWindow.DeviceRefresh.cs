@@ -15,22 +15,7 @@ public partial class MainWindow
     private bool _keyLearningHookAttached;
     private CancellationTokenSource? _deviceRefreshDebounce;
 
-    static MainWindow()
-    {
-        EventManager.RegisterClassHandler(
-            typeof(MainWindow),
-            LoadedEvent,
-            new RoutedEventHandler(MainWindow_LoadedDeviceRefresh));
-    }
 
-    private static void MainWindow_LoadedDeviceRefresh(object sender, RoutedEventArgs e)
-    {
-        if (sender is MainWindow window)
-        {
-            window.AttachDeviceRefreshHooks();
-            window.InstallKeyCatalogAndLearning();
-        }
-    }
 
     private void AttachDeviceRefreshHooks()
     {

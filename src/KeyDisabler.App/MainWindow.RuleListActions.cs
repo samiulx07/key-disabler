@@ -14,25 +14,7 @@ using WpfOrientation = System.Windows.Controls.Orientation;
 
 namespace KeyDisabler.App;
 
-internal static class MainWindowRuleListActionsBootstrap
-{
-    [ModuleInitializer]
-    internal static void Initialize()
-    {
-        EventManager.RegisterClassHandler(
-            typeof(MainWindow),
-            Window.LoadedEvent,
-            new RoutedEventHandler(OnMainWindowLoaded));
-    }
 
-    private static void OnMainWindowLoaded(object sender, RoutedEventArgs e)
-    {
-        if (sender is MainWindow window)
-        {
-            window.Dispatcher.BeginInvoke(new Action(window.InitializeRuleListActions), DispatcherPriority.ApplicationIdle);
-        }
-    }
-}
 
 public partial class MainWindow
 {

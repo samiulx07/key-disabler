@@ -4,25 +4,7 @@ using KeyDisabler.App.Services;
 
 namespace KeyDisabler.App;
 
-internal static class MainWindowBrandingBootstrap
-{
-    [System.Runtime.CompilerServices.ModuleInitializer]
-    internal static void Initialize()
-    {
-        EventManager.RegisterClassHandler(
-            typeof(MainWindow),
-            Window.LoadedEvent,
-            new RoutedEventHandler(OnMainWindowLoaded));
-    }
 
-    private static void OnMainWindowLoaded(object sender, RoutedEventArgs e)
-    {
-        if (sender is MainWindow window)
-        {
-            window.ApplyBranding();
-        }
-    }
-}
 
 public partial class MainWindow
 {

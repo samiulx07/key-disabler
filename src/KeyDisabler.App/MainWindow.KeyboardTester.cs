@@ -14,31 +14,7 @@ using WpfStackPanel = System.Windows.Controls.StackPanel;
 
 namespace KeyDisabler.App;
 
-internal static class MainWindowKeyboardTesterBootstrap
-{
-    [ModuleInitializer]
-    internal static void Initialize()
-    {
-        EventManager.RegisterClassHandler(
-            typeof(MainWindow),
-            Window.LoadedEvent,
-            new RoutedEventHandler(OnMainWindowLoaded));
-    }
 
-    private static void OnMainWindowLoaded(object sender, RoutedEventArgs e)
-    {
-        if (sender is MainWindow window)
-        {
-            window.Dispatcher.BeginInvoke(
-                new Action(() =>
-                {
-                    window.InitializeKeyboardTester();
-                    window.ScheduleKeyboardTesterFullLayout();
-                }),
-                DispatcherPriority.ApplicationIdle);
-        }
-    }
-}
 
 public partial class MainWindow
 {

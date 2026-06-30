@@ -7,27 +7,7 @@ using KeyDisabler.App.Services;
 
 namespace KeyDisabler.App;
 
-internal static class MainWindowRemapBootstrap
-{
-    [ModuleInitializer]
-    internal static void Initialize()
-    {
-        EventManager.RegisterClassHandler(
-            typeof(MainWindow),
-            Window.LoadedEvent,
-            new RoutedEventHandler(OnMainWindowLoaded));
-    }
 
-    private static void OnMainWindowLoaded(object sender, RoutedEventArgs e)
-    {
-        if (sender is MainWindow window)
-        {
-            window.Dispatcher.BeginInvoke(
-                new Action(window.InitializeRemapRules),
-                DispatcherPriority.ApplicationIdle);
-        }
-    }
-}
 
 public partial class MainWindow
 {

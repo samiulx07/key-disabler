@@ -39,14 +39,13 @@ public partial class App : System.Windows.Application
             var window = new MainWindow();
             MainWindow = window;
 
-            window.Show();
-
             if (startMinimized)
             {
-                window.Dispatcher.BeginInvoke(new Action(() =>
-                {
-                    window.Hide();
-                }), DispatcherPriority.ApplicationIdle);
+                window.EnsureInitialized();
+            }
+            else
+            {
+                window.Show();
             }
         }
         catch (Exception ex)

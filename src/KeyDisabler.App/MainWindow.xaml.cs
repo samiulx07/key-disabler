@@ -37,9 +37,22 @@ public partial class MainWindow : Window
         _deviceBlockerService.KeyReceived += DeviceBlockerService_KeyReceived;
     }
 
-    private void Window_Loaded(object sender, RoutedEventArgs e)
+    private bool _isInitialized;
+
+    public void EnsureInitialized()
     {
+        if (_isInitialized)
+        {
+            return;
+        }
+
+        _isInitialized = true;
         _isLoading = true;
+
+        // 1. Apply branding first
+        ApplyBranding();
+
+        // 2. Load settings and rules
         _settings = _settingsService.Load();
 
         foreach (var rule in _settings.Rules ?? new List<KeyboardRule>())
@@ -59,6 +72,13 @@ public partial class MainWindow : Window
             AddKeyOptionIfMissing(option);
         }
 
+        // 3. Initialize separate modules
+        InitializeRemapRules();
+        InitializeRuleListActions();
+        InitializeKeyboardTester();
+        ScheduleKeyboardTesterFullLayout();
+
+        // 4. Bind ItemsSources
         KeyboardList.ItemsSource = _devices;
         RuleDeviceCombo.ItemsSource = _devices;
         RulesList.ItemsSource = _rules;
@@ -79,18 +99,31 @@ public partial class MainWindow : Window
             _ => 0
         };
 
+        // 5. Initialize device refresh and auto-learning
+        AttachDeviceRefreshHooks();
+        InstallKeyCatalogAndLearning();
+
+        // 6. Force HWND handle creation for Win32 features
+        var handle = new WindowInteropHelper(this).EnsureHandle();
+        _hwndSource = HwndSource.FromHwnd(handle);
+        _hwndSource?.AddHook(WndProc);
+        _rawInputService.RegisterKeyboardInput(handle);
+
+        // 7. Initialize and start blockers
         RefreshDevices();
         UpdateRuleCount();
         UpdateDeviceBlocker();
         UpdateStatus(_deviceBlockerService.IsRunning ? "Device key rules active" : "Device blocker paused for safety");
 
-        var handle = new WindowInteropHelper(this).Handle;
-        _hwndSource = HwndSource.FromHwnd(handle);
-        _hwndSource?.AddHook(WndProc);
-        _rawInputService.RegisterKeyboardInput(handle);
-
+        // 8. Load tray icon
         _trayIconService = new TrayIconService(this);
+
         _isLoading = false;
+    }
+
+    private void Window_Loaded(object sender, RoutedEventArgs e)
+    {
+        EnsureInitialized();
     }
 
     private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
