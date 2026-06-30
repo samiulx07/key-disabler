@@ -24,10 +24,23 @@ public partial class App : System.Windows.Application
                 new SettingsService().Reset();
             }
 
+            var startMinimized = e.Args.Any(arg => 
+                string.Equals(arg, "--minimized", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(arg, "-minimized", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(arg, "/minimized", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(arg, "--min", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(arg, "-min", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(arg, "/min", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(arg, "-m", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(arg, "/m", StringComparison.OrdinalIgnoreCase));
+
             _singleInstanceService = new SingleInstanceService();
             if (!_singleInstanceService.IsFirstInstance)
             {
-                SingleInstanceService.SignalExistingInstance();
+                if (!startMinimized)
+                {
+                    SingleInstanceService.SignalExistingInstance();
+                }
                 _singleInstanceService.Dispose();
                 Environment.Exit(0);
                 return;
@@ -35,7 +48,6 @@ public partial class App : System.Windows.Application
 
             base.OnStartup(e);
 
-            var startMinimized = e.Args.Any(arg => string.Equals(arg, "--minimized", StringComparison.OrdinalIgnoreCase));
             var window = new MainWindow();
             MainWindow = window;
 
