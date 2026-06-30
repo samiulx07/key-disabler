@@ -145,7 +145,7 @@
                 <Setter Property="FontSize" Value="14" />
                 <Setter Property="FontWeight" Value="SemiBold" />
                 <Setter Property="Padding" Value="20,12" />
-                <Setter Property="Margin" Value="0,0,10,0" />
+                <Setter Property="Margin" Value="0" />
                 <Setter Property="MinHeight" Value="42" />
                 <Setter Property="Cursor" Value="Hand" />
                 <Setter Property="Panel.ZIndex" Value="0" />
@@ -156,7 +156,8 @@
                         <ControlTemplate TargetType="{x:Type TabItem}">
                             <Grid Background="Transparent"
                                   ClipToBounds="False"
-                                  UseLayoutRounding="True">
+                                  UseLayoutRounding="True"
+                                  Margin="0,0,10,0">
                                 <Border x:Name="TabBorder"
                                         Background="{TemplateBinding Background}"
                                         BorderBrush="{TemplateBinding BorderBrush}"
