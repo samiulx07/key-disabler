@@ -50,107 +50,12 @@ public partial class MainWindow
         _disabledKeyboards.CollectionChanged += RuleCollections_CollectionChanged;
         _remapRules.CollectionChanged += RuleCollections_CollectionChanged;
 
-        ApplySavedRuleHeaders();
         Dispatcher.BeginInvoke(new Action(UpdateProtectionSummary), DispatcherPriority.ApplicationIdle);
     }
 
     private void RuleCollections_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
         Dispatcher.BeginInvoke(new Action(UpdateProtectionSummary), DispatcherPriority.ApplicationIdle);
-    }
-
-    private void ApplySavedRuleHeaders()
-    {
-        AddBlockRulesHeaderActions();
-        AddRemapRulesHeaderActions();
-    }
-
-    private void AddBlockRulesHeaderActions()
-    {
-        if (FindName("RulesList") is not WpfListView rulesList || rulesList.Parent is not WpfGrid grid)
-        {
-            return;
-        }
-
-        if (FindVisualChildByNameForRuleHeaders<FrameworkElement>(grid, "SavedBlockRulesActionHeader") is not null)
-        {
-            return;
-        }
-
-        HideTextBlockInRuleHeaderRow(grid, 0, "Saved block rules");
-
-        var header = BuildRuleActionHeader("Saved Block Rules", RemoveRule_Click, ResetBlockRules_Click);
-        header.Name = "SavedBlockRulesActionHeader";
-        WpfGrid.SetRow(header, 0);
-        grid.Children.Add(header);
-    }
-
-    private void AddRemapRulesHeaderActions()
-    {
-        if (FindName("RemapRulesList") is not WpfListView remapList || remapList.Parent is not WpfGrid grid)
-        {
-            return;
-        }
-
-        if (FindVisualChildByNameForRuleHeaders<FrameworkElement>(grid, "SavedRemapRulesActionHeader") is not null)
-        {
-            return;
-        }
-
-        HideRuleHeaderGridRow(grid, 2);
-
-        var header = BuildRuleActionHeader("Saved Remap Rules", RemoveRemapRule_Click, ResetRemapRules_Click);
-        header.Name = "SavedRemapRulesActionHeader";
-        WpfGrid.SetRow(header, 2);
-        grid.Children.Add(header);
-    }
-
-    private WpfDockPanel BuildRuleActionHeader(string title, RoutedEventHandler removeHandler, RoutedEventHandler resetHandler)
-    {
-        var header = new WpfDockPanel
-        {
-            LastChildFill = true,
-            Margin = new Thickness(0, 0, 0, 14)
-        };
-
-        var actions = new WpfStackPanel
-        {
-            Orientation = WpfOrientation.Horizontal,
-            HorizontalAlignment = System.Windows.HorizontalAlignment.Right
-        };
-        WpfDockPanel.SetDock(actions, WpfDock.Right);
-
-        var removeButton = new WpfButton
-        {
-            Content = "Remove Selected",
-            Padding = new Thickness(12, 7, 12, 7),
-            Margin = new Thickness(0, 0, 8, 0)
-        };
-        removeButton.Click += removeHandler;
-
-        var resetButton = new WpfButton
-        {
-            Content = "Reset All",
-            Padding = new Thickness(12, 7, 12, 7),
-            Margin = new Thickness(0)
-        };
-        resetButton.Click += resetHandler;
-
-        actions.Children.Add(removeButton);
-        actions.Children.Add(resetButton);
-        header.Children.Add(actions);
-
-        var titleText = new WpfTextBlock
-        {
-            Text = title,
-            FontSize = 20,
-            FontWeight = FontWeights.SemiBold,
-            VerticalAlignment = VerticalAlignment.Center
-        };
-        titleText.SetResourceReference(ForegroundProperty, "TextPrimary");
-        header.Children.Add(titleText);
-
-        return header;
     }
 
     private void ResetBlockRules_Click(object sender, RoutedEventArgs e)
@@ -183,57 +88,5 @@ public partial class MainWindow
         UpdateProtectionSummary();
         UpdateStatus("All saved remap rules reset");
     }
-
-    private static void HideRuleHeaderGridRow(WpfGrid grid, int row)
-    {
-        foreach (UIElement child in grid.Children)
-        {
-            if (WpfGrid.GetRow(child) == row)
-            {
-                child.Visibility = Visibility.Collapsed;
-            }
-        }
-    }
-
-    private static void HideTextBlockInRuleHeaderRow(WpfGrid grid, int row, string text)
-    {
-        foreach (var textBlock in FindVisualChildrenForRuleHeaders<WpfTextBlock>(grid))
-        {
-            if (WpfGrid.GetRow(textBlock) == row && string.Equals(textBlock.Text, text, StringComparison.OrdinalIgnoreCase))
-            {
-                textBlock.Visibility = Visibility.Collapsed;
-            }
-        }
-    }
-
-    private static IEnumerable<T> FindVisualChildrenForRuleHeaders<T>(DependencyObject root) where T : DependencyObject
-    {
-        var count = VisualTreeHelper.GetChildrenCount(root);
-        for (var i = 0; i < count; i++)
-        {
-            var child = VisualTreeHelper.GetChild(root, i);
-            if (child is T typedChild)
-            {
-                yield return typedChild;
-            }
-
-            foreach (var descendant in FindVisualChildrenForRuleHeaders<T>(child))
-            {
-                yield return descendant;
-            }
-        }
-    }
-
-    private static T? FindVisualChildByNameForRuleHeaders<T>(DependencyObject root, string name) where T : FrameworkElement
-    {
-        foreach (var child in FindVisualChildrenForRuleHeaders<T>(root))
-        {
-            if (string.Equals(child.Name, name, StringComparison.Ordinal))
-            {
-                return child;
-            }
-        }
-
-        return null;
-    }
 }
+

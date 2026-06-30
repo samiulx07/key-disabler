@@ -30,7 +30,11 @@ internal static class MainWindowKeyboardTesterBootstrap
         if (sender is MainWindow window)
         {
             window.Dispatcher.BeginInvoke(
-                new Action(window.InitializeKeyboardTester),
+                new Action(() =>
+                {
+                    window.InitializeKeyboardTester();
+                    window.ScheduleKeyboardTesterFullLayout();
+                }),
                 DispatcherPriority.ApplicationIdle);
         }
     }

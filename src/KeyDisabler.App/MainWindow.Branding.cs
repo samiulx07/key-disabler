@@ -19,16 +19,14 @@ internal static class MainWindowBrandingBootstrap
     {
         if (sender is MainWindow window)
         {
-            window.ApplyBrandingAndSingleInstanceHooks();
+            window.ApplyBranding();
         }
     }
 }
 
 public partial class MainWindow
 {
-    private bool _singleInstanceHookAttached;
-
-    internal void ApplyBrandingAndSingleInstanceHooks()
+    internal void ApplyBranding()
     {
         Icon = BrandAssetService.LoadWindowIcon();
 
@@ -43,29 +41,5 @@ public partial class MainWindow
             // Fall back to the full horizontal logo if icon is missing
             AboutLogoImage.Source = BrandAssetService.LoadAboutLogo();
         }
-
-        if (_singleInstanceHookAttached)
-        {
-            return;
-        }
-
-        var handle = new WindowInteropHelper(this).Handle;
-        var source = HwndSource.FromHwnd(handle);
-        source?.AddHook(SingleInstanceWndProc);
-        _singleInstanceHookAttached = true;
-    }
-
-    private IntPtr SingleInstanceWndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
-    {
-        if (msg != SingleInstanceService.ShowMessageId)
-        {
-            return IntPtr.Zero;
-        }
-
-        Show();
-        WindowState = WindowState.Normal;
-        Activate();
-        handled = true;
-        return IntPtr.Zero;
     }
 }

@@ -50,7 +50,7 @@ public sealed class DeviceKeyboardBlockerService : IDisposable
         for (var device = InterceptionNative.KeyboardMinDevice; device <= InterceptionNative.KeyboardMaxDevice; device++)
         {
             var id = BuildDeviceId(device);
-            var hardwareId = GetHardwareId(device);
+            var hardwareId = GetHardwareId(_context, device);
             if (string.IsNullOrWhiteSpace(hardwareId))
             {
                 continue;
@@ -117,9 +117,7 @@ public sealed class DeviceKeyboardBlockerService : IDisposable
             .Where(rule => rule.IsEnabled)
             .Where(rule => IsInterceptionDeviceId(rule.DeviceId))
             .Where(rule => rule.ScanCode > 0)
-            .GroupBy(BuildRuleKey, StringComparer.OrdinalIgnoreCase)
-            .Select(group => group.Last())
-            .ToDictionary(BuildRuleKey, rule => rule, StringComparer.OrdinalIgnoreCase);
+            .ToList();
 
         // Full-keyboard blocking is intentionally paused. A bad saved full-keyboard rule can
         // lock the user out of all input devices, so only captured per-key rules are enforced.
@@ -130,9 +128,15 @@ public sealed class DeviceKeyboardBlockerService : IDisposable
         lock (_syncRoot)
         {
             _rulesByDeviceAndKey.Clear();
-            foreach (var pair in activeRules)
+            foreach (var rule in activeRules)
             {
-                _rulesByDeviceAndKey[pair.Key] = pair.Value;
+                _rulesByDeviceAndKey[BuildRuleKey(rule.DeviceId, rule.ScanCode, rule.IsExtendedKey)] = rule;
+
+                var hardwareId = NormalizeHardwareId(rule.DeviceHardwareId);
+                if (!string.IsNullOrWhiteSpace(hardwareId))
+                {
+                    _rulesByDeviceAndKey[BuildRuleKey(hardwareId, rule.ScanCode, rule.IsExtendedKey)] = rule;
+                }
             }
 
             _hasActiveRules = _rulesByDeviceAndKey.Count > 0 || _remapRulesByDeviceAndKey.Count > 0;
@@ -181,15 +185,34 @@ public sealed class DeviceKeyboardBlockerService : IDisposable
     {
         try
         {
-            while (!cancellationToken.IsCancellationRequested && _context != IntPtr.Zero)
+            while (true)
             {
-                var device = InterceptionNative.interception_wait(_context);
+                IntPtr context;
+                lock (_syncRoot)
+                {
+                    if (cancellationToken.IsCancellationRequested || _context == IntPtr.Zero)
+                    {
+                        break;
+                    }
+                    context = _context;
+                }
+
+                var device = InterceptionNative.interception_wait(context);
+
+                lock (_syncRoot)
+                {
+                    if (cancellationToken.IsCancellationRequested || _context == IntPtr.Zero)
+                    {
+                        break;
+                    }
+                }
+
                 if (device < InterceptionNative.KeyboardMinDevice || device > InterceptionNative.KeyboardMaxDevice)
                 {
                     continue;
                 }
 
-                ProcessDeviceEvent(device);
+                ProcessDeviceEvent(context, device);
             }
         }
         catch (Exception ex)
@@ -202,10 +225,10 @@ public sealed class DeviceKeyboardBlockerService : IDisposable
         }
     }
 
-    private void ProcessDeviceEvent(int device)
+    private void ProcessDeviceEvent(IntPtr context, int device)
     {
         var stroke = new InterceptionNative.InterceptionKeyStroke();
-        var received = InterceptionNative.interception_receive(_context, device, ref stroke, 1);
+        var received = InterceptionNative.interception_receive(context, device, ref stroke, 1);
         if (received <= 0)
         {
             return;
@@ -216,7 +239,7 @@ public sealed class DeviceKeyboardBlockerService : IDisposable
         try
         {
             var deviceId = BuildDeviceId(device);
-            var hardwareId = GetHardwareId(device);
+            var hardwareId = GetHardwareId(context, device);
             var normalizedHardwareId = NormalizeHardwareId(hardwareId);
             var displayName = BuildDisplayName(device, hardwareId);
             RememberDevice(deviceId, hardwareId, displayName);
@@ -271,7 +294,7 @@ public sealed class DeviceKeyboardBlockerService : IDisposable
         {
             if (shouldForward)
             {
-                InterceptionNative.interception_send(_context, device, ref stroke, 1);
+                InterceptionNative.interception_send(context, device, ref stroke, 1);
             }
         }
     }
@@ -316,15 +339,15 @@ public sealed class DeviceKeyboardBlockerService : IDisposable
         }
     }
 
-    private string GetHardwareId(int device)
+    private string GetHardwareId(IntPtr context, int device)
     {
-        if (_context == IntPtr.Zero)
+        if (context == IntPtr.Zero)
         {
             return string.Empty;
         }
 
         var buffer = new StringBuilder(512);
-        var result = InterceptionNative.interception_get_hardware_id(_context, device, buffer, (uint)buffer.Capacity);
+        var result = InterceptionNative.interception_get_hardware_id(context, device, buffer, (uint)buffer.Capacity);
         return result > 0 ? buffer.ToString().TrimEnd('\0').Trim() : string.Empty;
     }
 
@@ -355,10 +378,16 @@ public sealed class DeviceKeyboardBlockerService : IDisposable
     {
         _cancellationTokenSource?.Cancel();
 
-        if (_context != IntPtr.Zero)
+        IntPtr contextToDestroy = IntPtr.Zero;
+        lock (_syncRoot)
         {
-            InterceptionNative.interception_destroy_context(_context);
+            contextToDestroy = _context;
             _context = IntPtr.Zero;
+        }
+
+        if (contextToDestroy != IntPtr.Zero)
+        {
+            InterceptionNative.interception_destroy_context(contextToDestroy);
         }
 
         _cancellationTokenSource?.Dispose();

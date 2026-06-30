@@ -43,9 +43,16 @@ public sealed class SettingsService
 
     public void Save(AppSettings settings)
     {
-        Directory.CreateDirectory(SettingsDirectory);
-        var json = JsonSerializer.Serialize(settings, _jsonOptions);
-        File.WriteAllText(SettingsPath, json);
+        try
+        {
+            Directory.CreateDirectory(SettingsDirectory);
+            var json = JsonSerializer.Serialize(settings, _jsonOptions);
+            File.WriteAllText(SettingsPath, json);
+        }
+        catch (Exception ex)
+        {
+            StartupLogService.Write($"Settings save failed: {ex}");
+        }
     }
 
     public void Reset()
