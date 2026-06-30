@@ -164,65 +164,6 @@ public partial class MainWindow
         UpdateStatus("Remap rule removed");
     }
 
-    private void FixBrokenSpacebar_Click(object sender, RoutedEventArgs e)
-    {
-        if (SelectedRemapKeyboard() is not KeyboardDevice device)
-        {
-            UpdateStatus("Select your laptop keyboard first");
-            return;
-        }
-
-        var space = EnsureKeyOption("Space", 0x20, 0x39, false);
-        var rightAlt = EnsureKeyOption("Right Alt", 0xA5, 0x38, true);
-        var hardwareId = NormalizeHardwareId(device.DevicePath);
-
-        var blockExists = _rules.Any(rule =>
-            IsSameKeyboard(rule, device) &&
-            rule.ScanCode == space.ScanCode &&
-            rule.IsExtendedKey == space.IsExtendedKey);
-
-        if (!blockExists)
-        {
-            _rules.Add(new KeyboardRule
-            {
-                DeviceId = device.Id,
-                DeviceHardwareId = hardwareId,
-                DeviceName = device.DisplayName,
-                VirtualKey = space.VirtualKey,
-                ScanCode = space.ScanCode,
-                IsExtendedKey = space.IsExtendedKey,
-                KeyName = space.Name,
-                IsEnabled = true
-            });
-        }
-
-        var remapExists = _remapRules.Any(rule =>
-            rule.IsEnabled &&
-            IsSameKeyboard(rule, device) &&
-            rule.FromScanCode == rightAlt.ScanCode &&
-            rule.FromIsExtendedKey == rightAlt.IsExtendedKey);
-
-        if (!remapExists)
-        {
-            _remapRules.Add(BuildRemapRule(device, rightAlt, space));
-        }
-
-        RuleDeviceCombo.SelectedItem = device;
-        RemapDeviceCombo.SelectedItem = device;
-        KeyCombo.SelectedItem = space;
-        RemapFromKeyCombo.SelectedItem = rightAlt;
-        RemapToKeyCombo.SelectedItem = space;
-        CapturedKeyText.Text = $"Block rule ready: {space.Name} from {device.DisplayName}";
-        RemapFromCapturedText.Text = $"From: {rightAlt.Name}";
-        RemapToCapturedText.Text = $"To: {space.Name}";
-
-        SaveSettingsFromUi();
-        SaveRemapSettings();
-        UpdateDeviceBlocker();
-        UpdateRemapDeviceBlocker();
-        UpdateProtectionSummary();
-        UpdateStatus("Broken Spacebar preset applied: Space blocked, Right Alt becomes Space");
-    }
 
     private void RemapDeviceBlocker_KeyReceived(object? sender, DeviceKeyEventArgs e)
     {

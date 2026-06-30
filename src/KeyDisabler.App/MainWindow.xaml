@@ -182,10 +182,54 @@
                                     <Button Content="Add Block Rule" Click="AddRule_Click" />
                                 </StackPanel>
 
-                                <Border Height="1" Background="{DynamicResource BorderBrush}" Margin="0,2,0,20" />
 
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Border>
+
+                    <Border Grid.Column="1" Background="{DynamicResource CardBackground}" CornerRadius="18" Padding="22" Margin="12,0,0,0">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+
+                            <Grid Grid.Row="0" x:Name="SavedBlockRulesActionHeader" Margin="0,0,0,14">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="Saved Block Rules" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center" />
+                                <Button Grid.Column="1" Content="Remove Selected" Click="RemoveRule_Click" Margin="16,0,8,0" />
+                                <Button Grid.Column="2" Content="Reset All" Click="ResetBlockRules_Click" Margin="0" />
+                            </Grid>
+                            <ListView Grid.Row="1" x:Name="RulesList">
+                                <ListView.View>
+                                    <GridView>
+                                        <GridViewColumn Header="Keyboard" DisplayMemberBinding="{Binding DeviceName}" Width="220" />
+                                        <GridViewColumn Header="Blocked key" DisplayMemberBinding="{Binding KeyName}" Width="130" />
+                                        <GridViewColumn Header="Enabled" DisplayMemberBinding="{Binding IsEnabled}" Width="80" />
+                                    </GridView>
+                                </ListView.View>
+                            </ListView>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </TabItem>
+
+            <TabItem Header="Remap" x:Name="RemapTab">
+                <Grid Margin="0,12,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="0.95*" />
+                        <ColumnDefinition Width="1.05*" />
+                    </Grid.ColumnDefinitions>
+
+                    <Border Background="{DynamicResource CardBackground}" CornerRadius="18" Padding="22" Margin="0,0,12,0">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <StackPanel>
                                 <TextBlock Text="Remap healthy key" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" />
-                                <TextBlock Text="Map a healthy physical key to another key. For your issue, Right Alt should become Space while the broken Spacebar stays blocked."
+                                <TextBlock Text="Map a healthy physical key to another key output on a specific keyboard. Select the keyboard, choose the From and To keys, then add the remap rule."
                                            TextWrapping="Wrap"
                                            Foreground="{DynamicResource TextMuted}"
                                            Margin="0,8,0,16" />
@@ -218,17 +262,6 @@
                                     <Button Content="Capture To" Click="CaptureRemapToKey_Click" Margin="0,0,8,0" />
                                     <Button Content="Add Remap Rule" Click="AddRemapRule_Click" />
                                 </StackPanel>
-
-                                <Border Background="{DynamicResource InfoBackground}" BorderBrush="{DynamicResource InfoBorder}" BorderThickness="1" CornerRadius="12" Padding="14" Margin="0,8,0,0">
-                                    <StackPanel>
-                                        <TextBlock Text="Quick preset for shorted Spacebar" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" />
-                                        <TextBlock Text="Creates: Block Space + Remap Right Alt to Space on the selected keyboard."
-                                                   Foreground="{DynamicResource TextMuted}"
-                                                   TextWrapping="Wrap"
-                                                   Margin="0,4,0,10" />
-                                        <Button Content="Fix Broken Spacebar" Click="FixBrokenSpacebar_Click" Padding="16,10" FontWeight="SemiBold" />
-                                    </StackPanel>
-                                </Border>
                             </StackPanel>
                         </ScrollViewer>
                     </Border>
@@ -238,41 +271,19 @@
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="*" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="*" />
                             </Grid.RowDefinitions>
 
-                            <Grid Grid.Row="0" Margin="0,0,0,14">
+                            <Grid Grid.Row="0" x:Name="SavedRemapRulesActionHeader" Margin="0,0,0,14">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Text="Saved Block Rules" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center" />
-                                <Button Grid.Column="1" Content="Remove Selected" Click="RemoveRule_Click" Margin="16,0,8,0" />
-                                <Button Grid.Column="2" Content="Reset All" Click="ResetBlockRules_Click" Margin="0" />
-                            </Grid>
-                            <ListView Grid.Row="1" x:Name="RulesList" Margin="0,0,0,18">
-                                <ListView.View>
-                                    <GridView>
-                                        <GridViewColumn Header="Keyboard" DisplayMemberBinding="{Binding DeviceName}" Width="220" />
-                                        <GridViewColumn Header="Blocked key" DisplayMemberBinding="{Binding KeyName}" Width="130" />
-                                        <GridViewColumn Header="Enabled" DisplayMemberBinding="{Binding IsEnabled}" Width="80" />
-                                    </GridView>
-                                </ListView.View>
-                            </ListView>
-
-                            <Grid Grid.Row="2" Margin="0,0,0,14">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Text="Saved remap rules" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center" />
+                                <TextBlock Text="Saved Remap Rules" FontSize="20" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center" />
                                 <Button Grid.Column="1" Content="Remove Selected" Click="RemoveRemapRule_Click" Margin="16,0,8,0" />
                                 <Button Grid.Column="2" Content="Reset All" Click="ResetRemapRules_Click" Margin="0" />
                             </Grid>
-                            <ListView Grid.Row="3" x:Name="RemapRulesList">
+                            <ListView Grid.Row="1" x:Name="RemapRulesList">
                                 <ListView.View>
                                     <GridView>
                                         <GridViewColumn Header="Keyboard" DisplayMemberBinding="{Binding DeviceName}" Width="190" />
