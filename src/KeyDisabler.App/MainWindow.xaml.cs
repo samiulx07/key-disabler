@@ -176,7 +176,7 @@ public partial class MainWindow : Window
                 _isDetectingDevice = false;
                 RebindSavedRulesToCurrentDevices(saveAfterRebind: true);
                 UpdateDeviceBlocker();
-                UpdateStatus("Keyboard detected and selected");
+                UpdateStatus($"Keyboard detected and selected: {device.DisplayName}");
                 _trayIconService?.ShowBalloon("Keyboard detected", device.DisplayName);
             }
         });
@@ -192,7 +192,21 @@ public partial class MainWindow : Window
         Dispatcher.Invoke(() =>
         {
             var device = FindDeviceForSavedRule(e.DeviceId, e.DeviceId);
-            var deviceName = device?.DisplayName ?? "Unknown keyboard";
+            
+            if (device is null)
+            {
+                var displayName = $"Keyboard - Detection-only ({_devices.Count + 1})";
+                device = new KeyboardDevice
+                {
+                    Id = $"rawinput:{e.DeviceId.ToUpperInvariant().Trim().GetHashCode():X8}",
+                    DevicePath = e.DeviceId,
+                    DisplayName = displayName,
+                    DeviceType = "Raw Input Keyboard (detection only)"
+                };
+                _devices.Add(device);
+            }
+
+            var deviceName = device.DisplayName;
 
             if (_isDashboardDetecting)
             {
@@ -201,14 +215,14 @@ public partial class MainWindow : Window
 
             FooterText.Text = $"Detection only: {e.KeyName} from {deviceName}";
 
-            if (_isDetectingDevice && device is not null)
+            if (_isDetectingDevice)
             {
                 KeyboardList.SelectedItem = device;
                 RuleDeviceCombo.SelectedItem = device;
                 _isDetectingDevice = false;
                 UpdateStatus(device.Id.StartsWith("interception:", StringComparison.OrdinalIgnoreCase)
-                    ? "Keyboard detected and selected"
-                    : "Keyboard detected, but this source is detection-only");
+                    ? $"Keyboard detected and selected: {device.DisplayName}"
+                    : $"Keyboard detected: {device.DisplayName} (detection-only)");
                 _trayIconService?.ShowBalloon("Keyboard detected", device.DisplayName);
             }
         });
@@ -714,9 +728,96 @@ public partial class MainWindow : Window
     {
         var normalizedLeft = NormalizeHardwareId(left);
         var normalizedRight = NormalizeHardwareId(right);
-        return !string.IsNullOrWhiteSpace(normalizedLeft) &&
-               !string.IsNullOrWhiteSpace(normalizedRight) &&
-               string.Equals(normalizedLeft, normalizedRight, StringComparison.OrdinalIgnoreCase);
+        if (string.IsNullOrWhiteSpace(normalizedLeft) || string.IsNullOrWhiteSpace(normalizedRight))
+        {
+            return false;
+        }
+
+        if (string.Equals(normalizedLeft, normalizedRight, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        var coreLeft = ExtractCoreHardwareId(normalizedLeft);
+        var coreRight = ExtractCoreHardwareId(normalizedRight);
+
+        if (string.IsNullOrWhiteSpace(coreLeft) || string.IsNullOrWhiteSpace(coreRight))
+        {
+            return false;
+        }
+
+        if (string.Equals(coreLeft, coreRight, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        if (coreLeft.Contains("VID_") && coreLeft.Contains("PID_") &&
+            coreRight.Contains("VID_") && coreRight.Contains("PID_"))
+        {
+            var vidLeft = GetSubpart(coreLeft, "VID_");
+            var pidLeft = GetSubpart(coreLeft, "PID_");
+            var vidRight = GetSubpart(coreRight, "VID_");
+            var pidRight = GetSubpart(coreRight, "PID_");
+
+            if (!string.IsNullOrEmpty(vidLeft) && !string.IsNullOrEmpty(pidLeft) &&
+                string.Equals(vidLeft, vidRight, StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(pidLeft, pidRight, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static string ExtractCoreHardwareId(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return string.Empty;
+        }
+
+        var parts = path.Split(new[] { '\\', '#', '/' }, StringSplitOptions.RemoveEmptyEntries);
+        
+        foreach (var part in parts)
+        {
+            var upperPart = part.Trim().ToUpperInvariant();
+            if (upperPart.Contains("VID_") && upperPart.Contains("PID_"))
+            {
+                return upperPart;
+            }
+            if (upperPart.Contains("PNP03") || upperPart.Contains("PNP0A"))
+            {
+                return upperPart;
+            }
+        }
+        
+        foreach (var part in parts)
+        {
+            var upperPart = part.Trim().ToUpperInvariant();
+            if (upperPart.Equals("HID", StringComparison.Ordinal) ||
+                upperPart.Equals("KEYBOARD", StringComparison.Ordinal) ||
+                upperPart.Equals("ACPI", StringComparison.Ordinal) ||
+                upperPart.StartsWith("??", StringComparison.Ordinal) ||
+                upperPart.Contains("{") ||
+                upperPart.Length < 3)
+            {
+                continue;
+            }
+            
+            return upperPart;
+        }
+
+        return path.Trim().ToUpperInvariant();
+    }
+
+    private static string GetSubpart(string source, string prefix)
+    {
+        var idx = source.IndexOf(prefix, StringComparison.OrdinalIgnoreCase);
+        if (idx < 0) return string.Empty;
+        var sub = source.Substring(idx);
+        var endIdx = sub.IndexOf('&');
+        return endIdx < 0 ? sub : sub.Substring(0, endIdx);
     }
 
     private static string NormalizeHardwareId(string value)

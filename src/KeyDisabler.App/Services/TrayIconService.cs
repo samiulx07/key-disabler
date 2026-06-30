@@ -27,7 +27,7 @@ public sealed class TrayIconService : IDisposable
             Text = "Key Disabler",
             Icon = _trayIcon,
             ContextMenuStrip = menu,
-            BalloonTipIcon = Forms.ToolTipIcon.None
+            BalloonTipIcon = Forms.ToolTipIcon.Info
         };
 
         _notifyIcon.DoubleClick += (_, _) => ShowWindow();
@@ -39,7 +39,7 @@ public sealed class TrayIconService : IDisposable
         RefreshNotificationIcon();
         _notifyIcon.BalloonTipTitle = title;
         _notifyIcon.BalloonTipText = message;
-        _notifyIcon.BalloonTipIcon = Forms.ToolTipIcon.None;
+        _notifyIcon.BalloonTipIcon = Forms.ToolTipIcon.Info;
         _notifyIcon.ShowBalloonTip(2500);
     }
 
