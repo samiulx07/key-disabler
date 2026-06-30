@@ -66,6 +66,7 @@ public partial class MainWindow
         _isDetectingDevice = false;
         RemapFromCapturedText.Text = "From capture active: press the healthy physical key.";
         UpdateStatus("Press the physical key to remap from");
+        UpdateDeviceBlocker();
     }
 
     private void CaptureRemapToKey_Click(object sender, RoutedEventArgs e)
@@ -82,6 +83,7 @@ public partial class MainWindow
         _isDetectingDevice = false;
         RemapToCapturedText.Text = "To capture active: press the key output you want.";
         UpdateStatus("Press the key to remap to");
+        UpdateDeviceBlocker();
     }
 
     private void AddRemapRule_Click(object sender, RoutedEventArgs e)
@@ -196,6 +198,7 @@ public partial class MainWindow
             _isCapturingRemapToKey = false;
             UpdateStatus("To key captured. Now click Add Remap Rule.");
         }
+        UpdateDeviceBlocker();
     }
 
     private KeyRemapRule BuildRemapRule(KeyboardDevice device, KeyOption fromKey, KeyOption toKey)
@@ -249,7 +252,7 @@ public partial class MainWindow
     private void UpdateRemapDeviceBlocker()
     {
         _deviceBlockerService.UpdateRemapRules(_remapRules);
-        _deviceBlockerService.Start();
+        UpdateDeviceBlocker();
     }
 
     private void UpdateProtectionSummary()

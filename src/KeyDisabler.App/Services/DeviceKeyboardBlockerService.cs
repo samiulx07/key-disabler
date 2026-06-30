@@ -88,9 +88,9 @@ public sealed class DeviceKeyboardBlockerService : IDisposable
         return devices;
     }
 
-    public void Start()
+    public void Start(bool forcePassthrough = false)
     {
-        if (!HasActiveRules)
+        if (!HasActiveRules && !forcePassthrough)
         {
             StopWorkerAndDestroyContext();
             LastError = "No active device-level rules. Blocker is paused for safety.";
@@ -109,6 +109,11 @@ public sealed class DeviceKeyboardBlockerService : IDisposable
 
         _cancellationTokenSource = new CancellationTokenSource();
         _workerTask = Task.Run(() => WorkerLoop(_cancellationTokenSource.Token));
+    }
+
+    public void Stop()
+    {
+        StopWorkerAndDestroyContext();
     }
 
     public void UpdateRules(IEnumerable<KeyboardRule> rules, IEnumerable<DisabledKeyboardRule> disabledKeyboardRules)
@@ -142,10 +147,7 @@ public sealed class DeviceKeyboardBlockerService : IDisposable
             _hasActiveRules = _rulesByDeviceAndKey.Count > 0 || _remapRulesByDeviceAndKey.Count > 0;
         }
 
-        if (!HasActiveRules)
-        {
-            StopWorkerAndDestroyContext();
-        }
+
     }
 
     public void UpdateRemapRules(IEnumerable<KeyRemapRule> remapRules)
@@ -175,10 +177,7 @@ public sealed class DeviceKeyboardBlockerService : IDisposable
             _hasActiveRules = _rulesByDeviceAndKey.Count > 0 || _remapRulesByDeviceAndKey.Count > 0;
         }
 
-        if (!HasActiveRules)
-        {
-            StopWorkerAndDestroyContext();
-        }
+
     }
 
     private void WorkerLoop(CancellationToken cancellationToken)
@@ -221,6 +220,7 @@ public sealed class DeviceKeyboardBlockerService : IDisposable
             {
                 LastError = ex.Message;
                 IsAvailable = false;
+                StopWorkerAndDestroyContext();
             }
         }
     }

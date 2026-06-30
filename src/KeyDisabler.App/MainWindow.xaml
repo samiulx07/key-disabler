@@ -372,6 +372,22 @@
 
                         <TextBlock Text="Settings file" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" />
                         <TextBox x:Name="SettingsPathText" IsReadOnly="True" />
+
+                        <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="12" Padding="16" Margin="0,16,0,0">
+                            <StackPanel>
+                                <TextBlock Text="Keyboard Filter Driver Settings" FontSize="16" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" Margin="0,0,0,4" />
+                                <TextBlock Text="The device-specific keyboard filter driver allows blocking and remapping keys on a per-keyboard basis." 
+                                           Foreground="{DynamicResource TextMuted}" TextWrapping="Wrap" Margin="0,0,0,12" />
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,12">
+                                    <TextBlock Text="Status: " FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" VerticalAlignment="Center" />
+                                    <TextBlock x:Name="DriverStatusText" Text="Not checked" FontWeight="Bold" VerticalAlignment="Center" />
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <Button x:Name="InstallDriverButton" Content="Install Driver" Click="InstallDriver_Click" Padding="14,8" Margin="0,0,8,0" />
+                                    <Button x:Name="UninstallDriverButton" Content="Uninstall Driver" Click="UninstallDriver_Click" Padding="14,8" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
                     </StackPanel>
                 </Border>
             </TabItem>

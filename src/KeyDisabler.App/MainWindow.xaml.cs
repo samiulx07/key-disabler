@@ -1,5 +1,7 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
+using System.IO;
 using System.Windows;
 using System.Windows.Interop;
 using KeyDisabler.App.Models;
@@ -240,6 +242,7 @@ public partial class MainWindow : Window
         _isCapturingRuleKey = false;
         UpdateStatus("Press a key on the target keyboard");
         FooterText.Text = "Detection mode is active. Press any key from the exact keyboard you want to control.";
+        UpdateDeviceBlocker();
     }
 
     private void ToggleDashboardDetection_Click(object sender, RoutedEventArgs e)
@@ -258,6 +261,7 @@ public partial class MainWindow : Window
             LastKeyText.Text = "Press 'Start Detect Keys' to begin";
             UpdateStatus("Dashboard key detection stopped");
         }
+        UpdateDeviceBlocker();
     }
 
     private void CaptureRuleKey_Click(object sender, RoutedEventArgs e)
@@ -272,6 +276,7 @@ public partial class MainWindow : Window
         _isDetectingDevice = false;
         CapturedKeyText.Text = "Capture mode active: press the exact key/button from the selected keyboard.";
         UpdateStatus("Press the exact key to capture");
+        UpdateDeviceBlocker();
     }
 
     private void KeyboardList_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
@@ -509,6 +514,8 @@ public partial class MainWindow : Window
         {
             FooterText.Text = $"Detected {_devices.Count} keyboard device(s).";
         }
+
+        UpdateDriverStatusUI();
     }
 
     private KeyboardDevice EnsureDeviceFromEvent(DeviceKeyEventArgs e)
@@ -548,6 +555,7 @@ public partial class MainWindow : Window
         KeyCombo.SelectedItem = option;
         RuleDeviceCombo.SelectedItem = eventDevice;
         _isCapturingRuleKey = false;
+        UpdateDeviceBlocker();
 
         CapturedKeyText.Text = $"Captured: {option.Name} from {eventDevice.DisplayName}";
         UpdateStatus("Key captured. Now click Add Key Rule.");
@@ -647,11 +655,27 @@ public partial class MainWindow : Window
         _settingsService.Save(_settings);
     }
 
+    private void UpdateBlockerState()
+    {
+        var hasRules = _rules.Any(r => r.IsEnabled) || _remapRules.Any(r => r.IsEnabled);
+        var isDetecting = _isDashboardDetecting || _isDetectingDevice || _isCapturingRuleKey || _isCapturingRemapFromKey || _isCapturingRemapToKey;
+
+        if (hasRules || isDetecting)
+        {
+            _deviceBlockerService.Start(forcePassthrough: isDetecting);
+        }
+        else
+        {
+            _deviceBlockerService.Stop();
+        }
+    }
+
     private void UpdateDeviceBlocker()
     {
         RebindSavedRulesToCurrentDevices(saveAfterRebind: false);
         _deviceBlockerService.UpdateRules(_rules, _disabledKeyboards);
-        _deviceBlockerService.Start();
+        _deviceBlockerService.UpdateRemapRules(_remapRules);
+        UpdateBlockerState();
     }
 
     private void ApplyStartupSetting(bool enabled)
@@ -966,6 +990,117 @@ public partial class MainWindow : Window
             {
                 System.Windows.MessageBox.Show($"Failed to import settings: {ex.Message}", "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
             }
+        }
+    }
+
+    private void InstallDriver_Click(object sender, RoutedEventArgs e)
+    {
+        RunDriverInstaller("/install");
+    }
+
+    private void UninstallDriver_Click(object sender, RoutedEventArgs e)
+    {
+        RunDriverInstaller("/uninstall");
+    }
+
+    private void RunDriverInstaller(string arguments)
+    {
+        try
+        {
+            var exePath = FindDriverInstallerExe();
+            if (string.IsNullOrEmpty(exePath))
+            {
+                System.Windows.MessageBox.Show(
+                    "Driver installer (install-interception.exe) was not found in the application directory.",
+                    "Error",
+                    System.Windows.MessageBoxButton.OK,
+                    System.Windows.MessageBoxImage.Error);
+                return;
+            }
+
+            var startInfo = new ProcessStartInfo
+            {
+                FileName = exePath,
+                Arguments = arguments,
+                UseShellExecute = true,
+                Verb = "runas"
+            };
+
+            using var process = Process.Start(startInfo);
+            process?.WaitForExit();
+
+            System.Windows.MessageBox.Show(
+                "Driver installer execution completed. Please restart Windows for changes to take effect.",
+                "Restart Required",
+                System.Windows.MessageBoxButton.OK,
+                System.Windows.MessageBoxImage.Information);
+
+            RefreshDevices();
+            UpdateDriverStatusUI();
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show(
+                $"Failed to run driver installer: {ex.Message}",
+                "Error",
+                System.Windows.MessageBoxButton.OK,
+                System.Windows.MessageBoxImage.Error);
+        }
+    }
+
+    private string FindDriverInstallerExe()
+    {
+        var baseDir = AppDomain.CurrentDomain.BaseDirectory;
+        
+        var path1 = Path.Combine(baseDir, "driver", "install-interception.exe");
+        if (File.Exists(path1))
+        {
+            return path1;
+        }
+
+        var path2 = Path.GetFullPath(Path.Combine(baseDir, "..", "..", "..", "..", "interception", "Interception", "command line installer", "install-interception.exe"));
+        if (File.Exists(path2))
+        {
+            return path2;
+        }
+
+        var path3 = Path.Combine(baseDir, "install-interception.exe");
+        if (File.Exists(path3))
+        {
+            return path3;
+        }
+
+        return string.Empty;
+    }
+
+    private void UpdateDriverStatusUI()
+    {
+        if (DriverStatusText == null || InstallDriverButton == null || UninstallDriverButton == null)
+        {
+            return;
+        }
+
+        if (_deviceBlockerService.IsAvailable)
+        {
+            DriverStatusText.Text = "Installed & Active";
+            DriverStatusText.Foreground = (System.Windows.Media.Brush)FindResource("TextSuccess");
+            InstallDriverButton.IsEnabled = false;
+            UninstallDriverButton.IsEnabled = true;
+        }
+        else
+        {
+            if (_deviceBlockerService.LastError.Contains("interception.dll"))
+            {
+                DriverStatusText.Text = "interception.dll is missing";
+                DriverStatusText.Foreground = (System.Windows.Media.Brush)FindResource("BrandRed");
+            }
+            else
+            {
+                DriverStatusText.Text = "Not Installed / Requires Restart";
+                DriverStatusText.Foreground = (System.Windows.Media.Brush)FindResource("TextSecondary");
+            }
+            InstallDriverButton.IsEnabled = true;
+            UninstallDriverButton.IsEnabled = true;
         }
     }
 }
