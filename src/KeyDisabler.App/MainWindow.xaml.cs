@@ -99,15 +99,15 @@ public partial class MainWindow : Window
             _ => 0
         };
 
-        // 5. Initialize device refresh and auto-learning
-        AttachDeviceRefreshHooks();
-        InstallKeyCatalogAndLearning();
-
-        // 6. Force HWND handle creation for Win32 features
+        // 5. Force HWND handle creation for Win32 features
         var handle = new WindowInteropHelper(this).EnsureHandle();
         _hwndSource = HwndSource.FromHwnd(handle);
         _hwndSource?.AddHook(WndProc);
         _rawInputService.RegisterKeyboardInput(handle);
+
+        // 6. Initialize device refresh and auto-learning
+        AttachDeviceRefreshHooks();
+        InstallKeyCatalogAndLearning();
 
         // 7. Initialize and start blockers
         RefreshDevices();

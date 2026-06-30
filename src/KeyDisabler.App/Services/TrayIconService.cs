@@ -50,9 +50,15 @@ public sealed class TrayIconService : IDisposable
             return;
         }
 
-        _notifyIcon.Visible = false;
-        _notifyIcon.Icon = _trayIcon;
-        _notifyIcon.Visible = true;
+        if (_notifyIcon.Icon != _trayIcon)
+        {
+            _notifyIcon.Icon = _trayIcon;
+        }
+
+        if (!_notifyIcon.Visible)
+        {
+            _notifyIcon.Visible = true;
+        }
     }
 
     private void ShowWindow()

@@ -25,9 +25,17 @@ public partial class MainWindow
         }
 
         var handle = new WindowInteropHelper(this).Handle;
-        var source = HwndSource.FromHwnd(handle);
-        source?.AddHook(DeviceChangeWndProc);
-        _deviceRefreshHookAttached = true;
+        if (handle == IntPtr.Zero)
+        {
+            handle = new WindowInteropHelper(this).EnsureHandle();
+        }
+
+        if (handle != IntPtr.Zero)
+        {
+            var source = HwndSource.FromHwnd(handle);
+            source?.AddHook(DeviceChangeWndProc);
+            _deviceRefreshHookAttached = true;
+        }
 
         ScheduleDeviceRefresh("Initial delayed device scan", 700);
         ScheduleDeviceRefresh("Second delayed device scan", 2500);
