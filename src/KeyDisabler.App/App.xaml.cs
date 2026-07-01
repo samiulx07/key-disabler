@@ -1,7 +1,10 @@
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Threading;
 using KeyDisabler.App.Services;
+using Velopack;
+using Velopack.Sources;
 
 namespace KeyDisabler.App;
 
@@ -10,11 +13,29 @@ public partial class App : System.Windows.Application
     private const string AppUserModelId = "Samslab.KeyDisabler";
 
     private SingleInstanceService? _singleInstanceService;
+    private UpdateService? _updateService;
 
     protected override void OnStartup(System.Windows.StartupEventArgs e)
     {
         DispatcherUnhandledException += App_DispatcherUnhandledException;
         AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
+
+        // ── Velopack auto-update bootstrap ──────────────────────────
+        // This must run before anything else so Velopack can handle
+        // --velopack bootstrap args (first-run, updated, etc.)
+        try
+        {
+            VelopackApp.Build()
+                .WithFirstRun(() => OnFirstRun())
+                .WithAfterInstall(() => OnAfterInstall())
+                .Run();
+        }
+        catch (Exception ex)
+        {
+            // Velopack may fail in debug/dev builds — non-fatal
+            Debug.WriteLine($"[Velopack] Bootstrap error: {ex.Message}");
+        }
+
         ApplyWindowsAppIdentity();
 
         try
@@ -48,6 +69,10 @@ public partial class App : System.Windows.Application
 
             base.OnStartup(e);
 
+            // ── Start background update check ──────────────────────
+            _updateService = new UpdateService();
+            CheckForUpdatesAsync();
+
             var window = new MainWindow();
             MainWindow = window;
 
@@ -64,6 +89,62 @@ public partial class App : System.Windows.Application
         {
             StartupLogService.ShowStartupError(ex);
             Shutdown(-1);
+        }
+    }
+
+    /// <summary>
+    /// Returns the shared UpdateService instance for use by the UI layer.
+    /// </summary>
+    public UpdateService? UpdateService => _updateService;
+
+    /// <summary>
+    /// Called on the very first launch after the app is installed.
+    /// </summary>
+    private static void OnFirstRun()
+    {
+        Debug.WriteLine("[Velopack] First run after install.");
+    }
+
+    /// <summary>
+    /// Called after a new version is installed (before first launch of the new version).
+    /// </summary>
+    private static void OnAfterInstall()
+    {
+        Debug.WriteLine("[Velopack] After install hook.");
+    }
+
+    /// <summary>
+    /// Background update check. Stores the result so the UI can pick it up.
+    /// </summary>
+    private async void CheckForUpdatesAsync()
+    {
+        if (_updateService is null) return;
+
+        try
+        {
+            var updateInfo = await _updateService.CheckForUpdatesAsync();
+            if (updateInfo is not null)
+            {
+                Debug.WriteLine($"[Velopack] Update available: {updateInfo.TargetFullRelease.Version}");
+
+                // Show a toast notification in the system tray area
+                var version = updateInfo.TargetFullRelease.Version;
+                MainWindow?.Dispatcher.Invoke(() =>
+                {
+                    if (MainWindow is MainWindow window)
+                    {
+                        window.OnUpdateAvailable(updateInfo);
+                    }
+                });
+            }
+            else
+            {
+                Debug.WriteLine("[Velopack] No updates available.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[Velopack] Update check error: {ex.Message}");
         }
     }
 
@@ -88,6 +169,7 @@ public partial class App : System.Windows.Application
 
     protected override void OnExit(System.Windows.ExitEventArgs e)
     {
+        _updateService?.Dispose();
         _singleInstanceService?.Dispose();
         base.OnExit(e);
     }

@@ -440,6 +440,21 @@
             </TabItem>
         </TabControl>
 
-        <TextBlock Grid.Row="2" x:Name="FooterText" Text="Ready" Foreground="{DynamicResource TextMuted}" Margin="4,16,0,0" />
+        <Border Grid.Row="2" Background="{DynamicResource CardBackground}" CornerRadius="8" Padding="14,8" Margin="0,12,0,0">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <TextBlock x:Name="FooterText" Text="Ready" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" />
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button x:Name="CheckUpdatesButton" Content="✓ Check for Updates" Click="ManualCheckForUpdates_Click"
+                            Background="{DynamicResource InfoBackground}" BorderBrush="{DynamicResource PrimaryBrush}" BorderThickness="1"
+                            Foreground="{DynamicResource PrimaryBrush}" FontSize="12" Padding="12,6" Cursor="Hand" />
+                </StackPanel>
+            </Grid>
+        </Border>
     </Grid>
 </Window>

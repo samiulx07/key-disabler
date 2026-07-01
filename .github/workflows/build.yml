@@ -1,4 +1,4 @@
-name: Build Windows App
+name: Build and Release
 
 on:
   push:
@@ -9,9 +9,13 @@ on:
 permissions:
   contents: write
 
+env:
+  APP_NAME: KeyDisabler
+  DOTNET_VERSION: 10.0.x
+
 jobs:
   build:
-    name: Build Windows app and installer
+    name: Build, Pack & Release
     runs-on: windows-latest
 
     steps:
@@ -21,13 +25,19 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 10.0.x
+          dotnet-version: ${{ env.DOTNET_VERSION }}
 
       - name: Restore
-        run: dotnet restore src/KeyDisabler.App/KeyDisabler.App.csproj
+        run: dotnet restore src/${{ env.APP_NAME }}.App/${{ env.APP_NAME }}.App.csproj
 
-      - name: Publish portable app
-        run: dotnet publish src/KeyDisabler.App/KeyDisabler.App.csproj -c Release -r win-x64 --self-contained true /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true /p:EnableCompressionInSingleFile=true -o publish
+      - name: Publish app
+        run: >
+          dotnet publish src/${{ env.APP_NAME }}.App/${{ env.APP_NAME }}.App.csproj
+          -c Release -r win-x64 --self-contained true
+          /p:PublishSingleFile=true
+          /p:IncludeNativeLibrariesForSelfExtract=true
+          /p:EnableCompressionInSingleFile=true
+          -o publish
 
       - name: Download Interception driver package
         shell: pwsh
@@ -43,41 +53,52 @@ jobs:
           New-Item -ItemType Directory -Force -Path "publish\driver" | Out-Null
           Copy-Item -Path "$($installer.Directory.FullName)\*" -Destination "publish\driver" -Recurse -Force
 
-      - name: Install Inno Setup
-        run: choco install innosetup --no-progress -y
-
-      - name: Build installer
+      # ── Velopack: pack release and create delta updates ──────────
+      - name: Install Velopack CLI (vpk)
         shell: pwsh
         run: |
-          New-Item -ItemType Directory -Force -Path installer-output | Out-Null
-          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "src\KeyDisabler.Installer\KeyDisabler.iss"
+          dotnet tool install --global vpk --version 0.2.*
 
-      - name: Package portable zip
+      - name: Pack with Velopack
         shell: pwsh
         run: |
-          Compress-Archive -Path publish\* -DestinationPath KeyDisabler-portable-win-x64.zip -Force
-          Copy-Item installer-output\KeyDisablerSetup.exe KeyDisablerSetup-win-x64.exe -Force
+          # Expected publish layout for vpk:
+          #   RELEASES/       ← releases output
+          #   ReleaseContent/ ← app files (single exe + deps + driver folder)
+          mkdir ReleaseContent -Force
+          Copy-Item "publish\*" "ReleaseContent\" -Recurse -Force
 
-      - name: Upload portable artifact
+          # Create initial RELEASES directory for vpk
+          mkdir RELEASES -Force
+
+          vpk pack `
+            --packId "KeyDisabler" `
+            --packVersion "${{ github.run_number }}.0.0" `
+            --packDir "ReleaseContent" `
+            --packAuthors "Samiul Hasan" `
+            --packTitle "Key Disabler" `
+            --mainExe "${{ env.APP_NAME }}.exe" `
+            --icon "src\${{ env.APP_NAME }}.App\Assets\AppIcon.ico" `
+            --releaseDir "RELEASES"
+
+      - name: Upload Velopack release artifact
         uses: actions/upload-artifact@v4
         with:
-          name: KeyDisabler-portable-win-x64
-          path: KeyDisabler-portable-win-x64.zip
+          name: RELEASES
+          path: RELEASES/*
 
-      - name: Upload installer artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: KeyDisabler-installer-win-x64
-          path: KeyDisablerSetup-win-x64.exe
-
-      - name: Publish release assets
-        if: github.event_name == 'workflow_dispatch'
+      - name: Publish Release on GitHub
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: keydisabler-${{ github.run_number }}
-          name: Key Disabler Build ${{ github.run_number }}
+          tag_name: v${{ github.run_number }}.0.0
+          name: Key Disabler v${{ github.run_number }}.0.0
+          body: |
+            Auto-built release from commit ${{ github.sha }}.
+
+            ## ⚡ Auto-Updates
+            This release is packaged with Velopack for automatic updates.
+            Launch the app and it will notify you when a newer version is available.
           draft: false
           prerelease: true
           files: |
-            KeyDisablerSetup-win-x64.exe
-            KeyDisabler-portable-win-x64.zip
+            RELEASES/*

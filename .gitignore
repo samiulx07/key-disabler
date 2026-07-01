@@ -23,3 +23,8 @@ Thumbs.db
 *.log
 dotnet
 dotnet-install.ps1
+
+# Velopack
+RELEASES/
+ReleaseContent/
+Releases/

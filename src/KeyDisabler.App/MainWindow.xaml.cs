@@ -7,6 +7,7 @@ using System.Windows.Interop;
 using KeyDisabler.App.Models;
 using KeyDisabler.App.Services;
 using Microsoft.Win32;
+using Velopack;
 
 namespace KeyDisabler.App;
 
@@ -993,7 +994,102 @@ public partial class MainWindow : Window
         }
     }
 
-    private void InstallDriver_Click(object sender, RoutedEventArgs e)
+// ── Auto-update support (Velopack) ─────────────────────────────
+
+    /// <summary>
+    /// Called from the App class when a background check found an update.
+    /// </summary>
+    internal void OnUpdateAvailable(UpdateInfo updateInfo)
+    {
+        if (!Dispatcher.CheckAccess())
+        {
+            Dispatcher.Invoke(() => OnUpdateAvailable(updateInfo));
+            return;
+        }
+
+        var message = UpdateService.FormatUpdateInfo(updateInfo);
+        var result = System.Windows.MessageBox.Show(
+            message + "\n\nWould you like to download and install it now?",
+            "Update Available",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Information);
+
+        if (result == MessageBoxResult.Yes)
+        {
+            _ = DownloadAndApplyUpdateAsync();
+        }
+        else
+        {
+            UpdateStatus($"Update {updateInfo.TargetFullRelease.Version} available — use Check for Updates later.");
+        }
+    }
+
+    private async Task DownloadAndApplyUpdateAsync()
+    {
+        var updateService = ((App)System.Windows.Application.Current).UpdateService;
+        if (updateService is null)
+        {
+            UpdateStatus("Update service not available.");
+            return;
+        }
+
+        UpdateStatus("Downloading update...");
+
+        try
+        {
+            var progress = new Progress<double>(p =>
+            {
+                var percent = (int)(p * 100);
+                Dispatcher.Invoke(() => UpdateStatus($"Downloading update... {percent}%"));
+            });
+
+            await updateService.DownloadUpdateAsync(progress);
+            UpdateStatus("Update downloaded. Restarting...");
+            await Task.Delay(500); // Let the status message show
+            updateService.ApplyUpdateAndRestart();
+        }
+        catch (Exception ex)
+        {
+            UpdateStatus($"Update failed: {ex.Message}");
+            System.Windows.MessageBox.Show(
+                $"Failed to download or apply update:\n{ex.Message}",
+                "Update Error",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+        }
+    }
+
+    private async void ManualCheckForUpdates_Click(object sender, RoutedEventArgs e)
+    {
+        var updateService = ((App)System.Windows.Application.Current).UpdateService;
+        if (updateService is null)
+        {
+            UpdateStatus("Update service not available (debug build?).");
+            return;
+        }
+
+        UpdateStatus("Checking for updates...");
+
+        try
+        {
+            var updateInfo = await updateService.CheckForUpdatesAsync();
+            if (updateInfo is not null)
+            {
+                OnUpdateAvailable(updateInfo);
+            }
+            else
+            {
+                var currentVersion = updateService.CurrentVersion;
+                UpdateStatus(currentVersion is not null
+                    ? $"You're up to date (version {currentVersion})."
+                    : "No updates found.");
+            }
+        }
+        catch (Exception ex)
+        {
+            UpdateStatus($"Update check failed: {ex.Message}");
+
+private void InstallDriver_Click(object sender, RoutedEventArgs e)
     {
         RunDriverInstaller("/install");
     }
