@@ -5,7 +5,7 @@ using Velopack.Sources;
 
 namespace KeyDisabler.App.Services;
 
-public sealed class UpdateService : IDisposable
+public sealed class UpdateService
 {
     private const string GitHubRepoUrl = "https://github.com/samiulx07/key-disabler";
     private readonly UpdateManager _updateManager;
@@ -18,9 +18,9 @@ public sealed class UpdateService : IDisposable
     }
 
     /// <summary>
-    /// Returns the currently installed version, or null if this is a dev/debug build.
+    /// Returns the currently installed version string, or null if this is a dev/debug build.
     /// </summary>
-    public Version? CurrentVersion => _updateManager.CurrentVersion;
+    public string? CurrentVersion => _updateManager.CurrentVersion?.ToString();
 
     /// <summary>
     /// Checks for available updates in the background.
@@ -43,7 +43,7 @@ public sealed class UpdateService : IDisposable
     /// <summary>
     /// Downloads the pending update. Must only be called after a successful check.
     /// </summary>
-    public async Task DownloadUpdateAsync(IProgress<double>? progress = null)
+    public async Task DownloadUpdateAsync(Action<int>? progress = null)
     {
         if (_cachedUpdate is null)
         {
@@ -57,7 +57,7 @@ public sealed class UpdateService : IDisposable
     /// Applies the downloaded update and restarts the application.
     /// Must only be called after a successful download.
     /// </summary>
-    public void ApplyUpdateAndRestart(string? arguments = null)
+    public void ApplyUpdateAndRestart(string[]? arguments = null)
     {
         _updateManager.ApplyUpdatesAndRestart(_cachedUpdate!, arguments);
     }
@@ -68,19 +68,10 @@ public sealed class UpdateService : IDisposable
     public static string FormatUpdateInfo(UpdateInfo info)
     {
         var version = info.TargetFullRelease.Version;
-        var notes = string.IsNullOrWhiteSpace(info.TargetFullRelease.ReleaseNotes)
-            ? "No release notes available."
-            : info.TargetFullRelease.ReleaseNotes;
-
         return $"""
                 Version {version} is available!
 
-                {notes}
+                Would you like to download and install it now?
                 """;
-    }
-
-    public void Dispose()
-    {
-        _updateManager.Dispose();
     }
 }

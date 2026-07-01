@@ -1037,9 +1037,8 @@ public partial class MainWindow : Window
 
         try
         {
-            var progress = new Progress<double>(p =>
+            var progress = new Action<int>(percent =>
             {
-                var percent = (int)(p * 100);
                 Dispatcher.Invoke(() => UpdateStatus($"Downloading update... {percent}%"));
             });
 

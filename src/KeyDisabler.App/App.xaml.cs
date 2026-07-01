@@ -4,7 +4,6 @@ using System.Windows;
 using System.Windows.Threading;
 using KeyDisabler.App.Services;
 using Velopack;
-using Velopack.Sources;
 
 namespace KeyDisabler.App;
 
@@ -25,10 +24,7 @@ public partial class App : System.Windows.Application
         // --velopack bootstrap args (first-run, updated, etc.)
         try
         {
-            VelopackApp.Build()
-                .WithFirstRun(() => OnFirstRun())
-                .WithAfterInstall(() => OnAfterInstall())
-                .Run();
+            VelopackApp.Build().Run();
         }
         catch (Exception ex)
         {
@@ -98,22 +94,6 @@ public partial class App : System.Windows.Application
     public UpdateService? UpdateService => _updateService;
 
     /// <summary>
-    /// Called on the very first launch after the app is installed.
-    /// </summary>
-    private static void OnFirstRun()
-    {
-        Debug.WriteLine("[Velopack] First run after install.");
-    }
-
-    /// <summary>
-    /// Called after a new version is installed (before first launch of the new version).
-    /// </summary>
-    private static void OnAfterInstall()
-    {
-        Debug.WriteLine("[Velopack] After install hook.");
-    }
-
-    /// <summary>
     /// Background update check. Stores the result so the UI can pick it up.
     /// </summary>
     private async void CheckForUpdatesAsync()
@@ -127,8 +107,7 @@ public partial class App : System.Windows.Application
             {
                 Debug.WriteLine($"[Velopack] Update available: {updateInfo.TargetFullRelease.Version}");
 
-                // Show a toast notification in the system tray area
-                var version = updateInfo.TargetFullRelease.Version;
+                // Show the update notification on the UI thread
                 MainWindow?.Dispatcher.Invoke(() =>
                 {
                     if (MainWindow is MainWindow window)
@@ -169,7 +148,6 @@ public partial class App : System.Windows.Application
 
     protected override void OnExit(System.Windows.ExitEventArgs e)
     {
-        _updateService?.Dispose();
         _singleInstanceService?.Dispose();
         base.OnExit(e);
     }
