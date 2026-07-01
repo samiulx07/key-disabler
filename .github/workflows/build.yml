@@ -57,35 +57,35 @@ jobs:
       - name: Install Velopack CLI (vpk)
         shell: pwsh
         run: |
-          dotnet tool install --global vpk --version 0.2.*
+          dotnet tool install --global vpk
 
       - name: Pack with Velopack
         shell: pwsh
         run: |
           # Expected publish layout for vpk:
-          #   RELEASES/       ← releases output
-          #   ReleaseContent/ ← app files (single exe + deps + driver folder)
-          mkdir ReleaseContent -Force
-          Copy-Item "publish\*" "ReleaseContent\" -Recurse -Force
-
-          # Create initial RELEASES directory for vpk
-          mkdir RELEASES -Force
-
+          #   publish/ ← app files (single exe + deps + driver folder)
           vpk pack `
             --packId "KeyDisabler" `
             --packVersion "${{ github.run_number }}.0.0" `
-            --packDir "ReleaseContent" `
-            --packAuthors "Samiul Hasan" `
-            --packTitle "Key Disabler" `
-            --mainExe "${{ env.APP_NAME }}.exe" `
-            --icon "src\${{ env.APP_NAME }}.App\Assets\AppIcon.ico" `
-            --releaseDir "RELEASES"
+            --packDir "publish" `
+            --mainExe "${{ env.APP_NAME }}.exe"
 
       - name: Upload Velopack release artifact
         uses: actions/upload-artifact@v4
         with:
           name: RELEASES
           path: RELEASES/*
+
+      - name: Upload portable zip
+        shell: pwsh
+        run: |
+          Compress-Archive -Path publish\* -DestinationPath KeyDisabler-portable-win-x64.zip -Force
+
+      - name: Upload portable artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: KeyDisabler-portable-win-x64
+          path: KeyDisabler-portable-win-x64.zip
 
       - name: Publish Release on GitHub
         uses: softprops/action-gh-release@v2
@@ -101,4 +101,5 @@ jobs:
           draft: false
           prerelease: true
           files: |
+            KeyDisabler-portable-win-x64.zip
             RELEASES/*
