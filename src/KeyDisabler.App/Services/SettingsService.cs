@@ -63,6 +63,7 @@ public sealed class SettingsService
             StartWithWindows = false,
             MinimizeToTray = true,
             Rules = new List<KeyboardRule>(),
+            RemapRules = new List<KeyRemapRule>(),
             DisabledKeyboards = new List<DisabledKeyboardRule>()
         });
     }

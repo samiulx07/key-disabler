@@ -7,6 +7,8 @@ Key Disabler is a Windows desktop utility for per-device keyboard management. It
 ![GitHub Actions](https://github.com/samiulx07/key-disabler/actions/workflows/build.yml/badge.svg)
 ![.NET](https://img.shields.io/badge/.NET-10.0-512BD4)
 ![Platform](https://img.shields.io/badge/platform-Windows-blue)
+![Size](https://img.shields.io/github/repo-size/samiulx07/key-disabler)
+![License](https://img.shields.io/badge/license-MIT-green)
 
 ---
 
@@ -18,45 +20,45 @@ Block a key on one keyboard without affecting others:
 ```text
 Keyboard 1 + Space → ❌ Blocked
 Keyboard 2 + Space → ✅ Allowed
-Keyboard 3 + Space → ✅ Allowed
 ```
 
-Rules are matched using device identity + scan code + extended-key state.
+Rules are matched using device identity + scan code + extended-key state, enforced at the driver level via the [Interception](https://github.com/oblitum/Interception) filter driver.
 
 ### 🔄 Key Remapping
 Remap any key to any other key on a per-device basis:
 - Capture the source key by pressing it physically
-- Choose or capture the target key
+- Choose or capture the target key from a drop-down
 - Rules persist across restarts
 
 ### ⌨️ Built-in Keyboard Tester
-Test every key on any connected keyboard with a full visual layout. See real-time key press feedback including scan codes and extended-key state.
+Test every key on any connected keyboard with a full visual layout. See real-time key press feedback including scan codes, extended-key state, and which keyboard the event came from.
 
 ### 🎨 Themes
-Choose between **Light**, **Dark**, or **System** theme.
+Choose between **Light**, **Dark**, or **System** theme — follows Windows system setting automatically.
 
-### ⚡ Auto-Updates (Velopack)
-The app automatically checks for updates on startup. When a new version is available, you'll be prompted to download and install with one click — no manual downloads needed.
+### ⚡ Auto-Updates
+The app automatically checks for updates on startup via Velopack. When a new version is available, you'll be prompted to download and install with one click — no manual downloads needed. You can also check manually via the **"✓ Check for Updates"** button in the footer.
 
 ### 🖥️ System Tray
-Minimizes to the system tray. Quick access to toggle blocking, check status, or exit.
+Minimizes to the system tray. Right-click for quick access: Open, Hide, or Exit.
 
 ### 🛠️ Driver Management
-Install or uninstall the Interception driver directly from the app UI with admin elevation.
+Install or uninstall the Interception driver directly from the app UI with admin elevation (UAC prompt).
 
 ---
 
 ## 🛡️ Safety Design
 
-To prevent accidental input lockout:
+To prevent accidental input lockout, the app includes multiple safety layers:
 
 | Safety Measure | Status |
 |---------------|--------|
 | Full-keyboard disable | ⏸️ Paused — requires timed-test safety flow |
-| Blocker auto-start | ❌ Only when active rules exist |
+| Blocker auto-start | ❌ Only runs when active rules exist |
 | Raw Input devices | 🔍 Detection only — no enforceable rules |
-| Driver auto-install | ❌ Unchecked by default |
+| Driver auto-install | ❌ Unchecked by default in installer |
 | Windows startup | ❌ Unchecked by default |
+| Last keyboard disable | ❌ Blocked by safety check |
 | Recovery shortcuts | ✅ Added to Start Menu |
 
 ---
@@ -65,24 +67,42 @@ To prevent accidental input lockout:
 
 Key Disabler uses **Velopack** for automatic updates:
 
-1. **You launch the app** → Background check runs
+1. **Launch the app** → Background check runs
 2. **Update available?** → Popup asks to download & install
 3. **Click Yes** → Downloads in background, applies, restarts
 
-You can also manually check at any time via the **"✓ Check for Updates"** button in the app footer.
+Updates are delivered via **GitHub Releases**. The app checks for prerelease versions by default.
 
 ---
 
-## 📦 Build Artifacts
+## 📊 Code Audit Summary
 
-GitHub Actions produces these on every push:
+**Total:** 28 C# files | ~4,100 LOC | .NET 10 WPF
 
-| Artifact | Description |
-|----------|-------------|
-| `KeyDisabler-portable-win-x64.zip` | Standalone portable app (no install needed) |
-| `RELEASES/*` | Velopack auto-update packages |
+### 🟢 Strengths
 
-Manual workflow runs also publish to **GitHub Releases** with prerelease tags.
+| Area | Finding |
+|------|---------|
+| **Architecture** | Clean separation — 4 models, 11 services, partial class MainWindow |
+| **Memory safety** | `Marshal.FreeHGlobal` properly called in `finally` blocks |
+| **Threading** | All UI updates dispatched via `Dispatcher`; debounced device refresh |
+| **Single instance** | Global `Mutex` + `RegisterWindowMessage` for inter-process signaling |
+| **Theme system** | Dynamic resource dictionary swap; follows Windows system theme |
+| **Logging** | Failsafe startup logging to `%APPDATA%\KeyDisabler\logs\` |
+| **Error resilience** | All external calls (file I/O, driver, registry) wrapped in try/catch |
+| **Asset fallback** | Tray/Win icon degrades gracefully from .ico → .exe → system default |
+| **CI/CD** | Full pipeline: build → Velopack pack → release to GitHub |
+
+### 🟡 Minor Observations
+
+| Issue | Severity | Suggestion |
+|-------|----------|------------|
+| `RawInputService` uses `GetHashCode()` for device ID (non-stable) | Low | Use a hash of `devicePath` with a stable algorithm (e.g. SHA256 truncated) |
+| `KeyNameResolver` has limited key coverage | Low | Merge with the full catalog from `BuildStandardKeyboardCatalog()` |
+| Phone number visible in Dev Options tab | Low | Consider making this configurable or conditional |
+| `SettingsService.Reset()` doesn't clear `RemapRules` | Low | Add `RemapRules = new()` to the reset |
+| `DeviceKeyboardBlockerService` worker has no graceful shutdown timeout | Low | Add `_workerTask.Wait(TimeSpan.FromSeconds(5))` in dispose |
+| Version number in `.csproj` is `0.2.2` — consider semver alignment with CI | Low | Sync `Version` with CI release tags `v{run}.0.0` |
 
 ---
 
@@ -97,20 +117,18 @@ dotnet publish src/KeyDisabler.App/KeyDisabler.App.csproj \
   -o publish
 ```
 
-Portable output: `publish/KeyDisabler.exe`
-
-Copy the `driver/` folder from the repo into `publish/` for in-app driver management.
+Then copy the `driver/` folder (from the repo root) into `publish/` for in-app driver management.
 
 ---
 
 ## 🧪 How to Use
 
 1. **Launch Key Disabler**
-2. **Select a keyboard** from the dashboard
-3. **Capture a key** by pressing it physically
+2. **Select a keyboard** from the Keyboards tab
+3. **Capture a key** by pressing it physically (or pick from the dropdown)
 4. **Save the rule** — that key is now blocked on that specific keyboard
 5. **Optionally remap keys** in the Remap tab
-6. **Test keys** in the Keyboard Tester tab
+6. **Test keys** in the Keyboard Tester tab with the full visual layout
 
 ---
 
@@ -125,23 +143,57 @@ del "%APPDATA%\KeyDisabler\settings.json"
 shutdown /r /t 0
 ```
 
-See [docs/emergency-recovery.md](docs/emergency-recovery.md) for more details.
+See [docs/emergency-recovery.md](docs/emergency-recovery.md) for detailed instructions, including what to do if the driver path is missing.
 
 ---
 
 ## 🛠️ Tech Stack
 
-- **Language:** C# (.NET 10)
-- **Framework:** WPF (Windows Presentation Foundation)
-- **Driver:** [Interception](https://github.com/oblitum/Interception) (low-level keyboard filter)
-- **Auto-Update:** [Velopack](https://velopack.io/)
-- **Packaging:** Velopack + GitHub Actions
+| Component | Technology |
+|-----------|-----------|
+| **Language** | C# (.NET 10) |
+| **UI Framework** | WPF (Windows Presentation Foundation) |
+| **Keyboard driver** | [Interception](https://github.com/oblitum/Interception) (low-level keyboard filter) |
+| **Auto-update** | [Velopack](https://velopack.io/) |
+| **CI/CD** | GitHub Actions |
+| **Packaging** | Velopack + standalone portable zip |
+
+---
+
+## 📦 Project Structure
+
+```
+src/KeyDisabler.App/
+├── App.xaml / App.xaml.cs         # Application entry, Velopack bootstrap
+├── MainWindow.xaml                # Full WPF UI (Dashboard, Keyboards, Rules, Remap, Tester, Settings, Dev Options)
+├── MainWindow.xaml.cs             # Window logic: init, WndProc, device/rule management, exports
+├── MainWindow.*.cs                # Partial classes: Branding, DeviceRefresh, HardRefresh, FooterDetection,
+│                                  #   KeyboardTester, KeyboardTesterFullLayout, Remap, RuleListActions, UiFixes
+├── Models/                        # AppSettings, KeyboardRule, KeyRemapRule, DisabledKeyboardRule, KeyboardDevice
+├── Services/
+│   ├── BrandAssetService.cs       # Icon and logo loading with fallbacks
+│   ├── DeviceKeyboardBlockerService.cs  # Core: Interception driver blocking + remapping
+│   ├── DeviceKeyEventArgs.cs      # Event args for Interception key events
+│   ├── InterceptionNative.cs      # P/Invoke bindings for interception.dll
+│   ├── KeyNameResolver.cs         # Scan code → human name resolver
+│   ├── RawInputService.cs         # Win32 Raw Input API for keyboard detection
+│   ├── RawKeyEventArgs.cs         # Event args for Raw Input key events
+│   ├── SettingsService.cs         # JSON settings persistence in %APPDATA%
+│   ├── SingleInstanceService.cs   # Global mutex + window message for single instance
+│   ├── StartupLogService.cs       # File-based startup error logging
+│   ├── ThemeService.cs            # WPF theme switching with Windows system detection
+│   ├── TrayIconService.cs         # System tray NotifyIcon with context menu
+│   └── UpdateService.cs           # Velopack update check, download, and apply
+└── Themes/                        # DarkTheme.xaml, LightTheme.xaml
+```
 
 ---
 
 ## 👨‍💻 Author
 
 **Samslab (Samiul Hasan)**
+
+[GitHub](https://github.com/SamiulxHasanx07) · [Email](mailto:samiulxhasan650@gmail.com)
 
 ---
 
