@@ -76,6 +76,19 @@ jobs:
           name: RELEASES
           path: RELEASES/*
 
+      - name: Upload Setup installer
+        shell: pwsh
+        run: |
+          # Extract the Setup.exe from RELEASES for direct download
+          Copy-Item "RELEASES\Setup.exe" "KeyDisablerSetup-win-x64.exe" -Force
+          Write-Host "Setup installer copied: KeyDisablerSetup-win-x64.exe"
+
+      - name: Upload Setup installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: KeyDisablerSetup-win-x64
+          path: KeyDisablerSetup-win-x64.exe
+
       - name: Upload portable zip
         shell: pwsh
         run: |
@@ -101,5 +114,6 @@ jobs:
           draft: false
           prerelease: true
           files: |
+            KeyDisablerSetup-win-x64.exe
             KeyDisabler-portable-win-x64.zip
             RELEASES/*
