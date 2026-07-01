@@ -1088,8 +1088,10 @@ public partial class MainWindow : Window
         catch (Exception ex)
         {
             UpdateStatus($"Update check failed: {ex.Message}");
+        }
+    }
 
-private void InstallDriver_Click(object sender, RoutedEventArgs e)
+    private void InstallDriver_Click(object sender, RoutedEventArgs e)
     {
         RunDriverInstaller("/install");
     }
