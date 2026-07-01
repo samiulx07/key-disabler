@@ -2,6 +2,7 @@ using System.Collections.Specialized;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
+using WpfKeyEventArgs = System.Windows.Input.KeyEventArgs;
 using System.Windows.Threading;
 using KeyDisabler.App.Models;
 using KeyDisabler.App.Services;
@@ -66,6 +67,11 @@ public partial class MainWindow
         _devices.CollectionChanged += TesterDevices_CollectionChanged;
         _deviceBlockerService.KeyReceived += KeyboardTester_KeyReceived;
 
+        // Suppress all WPF-level keyboard input while the tester is active
+        // so key presses don't trigger tab switches, combo box changes, etc.
+        PreviewKeyDown += KeyboardTester_PreviewKeyDown;
+        PreviewKeyUp += KeyboardTester_PreviewKeyUp;
+
         BuildKeyboardTesterLayout();
         RefreshTesterKeyboardSelector();
         UpdateTesterCountText();
@@ -117,6 +123,10 @@ public partial class MainWindow
             _testerLastKeyText.Text = "Listening for key presses from the selected keyboard...";
         }
 
+        // Move focus to the keyboard layout panel so key presses don't
+        // interact with combo boxes, tabs, or other focusable controls.
+        _keyboardTesterLayoutPanel?.Focus();
+
         UpdateStatus("Keyboard tester active");
     }
 
@@ -136,6 +146,27 @@ public partial class MainWindow
 
         UpdateTesterCountText();
         UpdateStatus("Keyboard tester reset");
+    }
+
+    /// <summary>
+    /// Suppresses all WPF-level keyboard input while the keyboard tester is active.
+    /// Without this, key presses leak through and trigger tab switches, combo box
+    /// selection changes, button clicks, and other unintended UI interactions.
+    /// </summary>
+    private void KeyboardTester_PreviewKeyDown(object sender, WpfKeyEventArgs e)
+    {
+        if (_isKeyboardTesting)
+        {
+            e.Handled = true;
+        }
+    }
+
+    private void KeyboardTester_PreviewKeyUp(object sender, WpfKeyEventArgs e)
+    {
+        if (_isKeyboardTesting)
+        {
+            e.Handled = true;
+        }
     }
 
     private void KeyboardTester_KeyReceived(object? sender, DeviceKeyEventArgs e)
