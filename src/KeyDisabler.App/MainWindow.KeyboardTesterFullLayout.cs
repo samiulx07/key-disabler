@@ -168,9 +168,7 @@ public partial class MainWindow
                 IsHitTestVisible = false
             };
 
-            var keyId = BuildTesterKeyId(item.ScanCode, item.IsExtendedKey);
-            _keyboardTesterButtons[keyId] = button;
-            _keyboardTesterStates[keyId] = "Normal";
+            RegisterTesterButton(item.ScanCode, item.IsExtendedKey, button);
             ApplyTesterButtonState(button, "Normal");
             row.Children.Add(button);
         }

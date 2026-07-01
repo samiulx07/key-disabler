@@ -24,6 +24,8 @@ UninstallDisplayIcon={app}\{#MyAppExeName}
 PrivilegesRequired=admin
 ArchitecturesAllowed=x64
 ArchitecturesInstallIn64BitMode=x64
+AppMutex=Global\KeyDisabler_SamiulHasan_Samslab_SingleInstance
+CloseApplications=yes
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
@@ -49,6 +51,7 @@ Filename: "{app}\driver\install-interception.exe"; Parameters: "/install"; Descr
 Filename: "{app}\{#MyAppExeName}"; Description: "Launch {#MyAppName}"; Flags: nowait postinstall skipifsilent
 
 [UninstallRun]
+Filename: "taskkill"; Parameters: "/IM KeyDisabler.exe /F"; Flags: runhidden; RunOnceId: "KillAppBeforeUninstall"
 Filename: "{app}\driver\install-interception.exe"; Parameters: "/uninstall"; Flags: runhidden waituntilterminated; RunOnceId: "UninstallInterceptionDriver"
 
 [UninstallDelete]

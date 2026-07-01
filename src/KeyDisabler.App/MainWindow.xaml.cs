@@ -443,6 +443,12 @@ public partial class MainWindow : Window
         }
     }
 
+    public void CloseFromTray()
+    {
+        _allowClose = true;
+        Close();
+    }
+
     private void Window_Closing(object? sender, CancelEventArgs e)
     {
         if (_allowClose)
@@ -948,10 +954,78 @@ public partial class MainWindow : Window
         {
             try
             {
-                System.IO.File.Copy(dialog.FileName, _settingsService.SettingsPath, true);
-                
-                // Reload settings
-                _settings = _settingsService.Load();
+                var fileInfo = new FileInfo(dialog.FileName);
+                if (fileInfo.Length > 512 * 1024) // 512 KB limit
+                {
+                    throw new InvalidDataException("The settings file exceeds the maximum allowed size (512 KB).");
+                }
+
+                var json = File.ReadAllText(dialog.FileName);
+                var options = new System.Text.Json.JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                };
+                var imported = System.Text.Json.JsonSerializer.Deserialize<AppSettings>(json, options);
+
+                if (imported is null)
+                {
+                    throw new InvalidDataException("Failed to parse settings file. The format is invalid.");
+                }
+
+                // Schema and limit validations
+                if (imported.Rules is null || imported.Rules.Count > 500)
+                {
+                    throw new InvalidDataException("Invalid block rules count (maximum is 500).");
+                }
+                if (imported.RemapRules is null || imported.RemapRules.Count > 500)
+                {
+                    throw new InvalidDataException("Invalid remap rules count (maximum is 500).");
+                }
+                if (imported.DisabledKeyboards is null || imported.DisabledKeyboards.Count > 100)
+                {
+                    throw new InvalidDataException("Invalid disabled keyboards count (maximum is 100).");
+                }
+
+                // Check rule length bounds to prevent overflows/exploitation
+                foreach (var rule in imported.Rules)
+                {
+                    if (rule is null || 
+                        (rule.DeviceId?.Length ?? 0) > 512 || 
+                        (rule.DeviceHardwareId?.Length ?? 0) > 512 || 
+                        (rule.DeviceName?.Length ?? 0) > 512 || 
+                        (rule.KeyName?.Length ?? 0) > 64)
+                    {
+                        throw new InvalidDataException("Invalid data found in block rules.");
+                    }
+                }
+
+                foreach (var rule in imported.RemapRules)
+                {
+                    if (rule is null || 
+                        (rule.DeviceId?.Length ?? 0) > 512 || 
+                        (rule.DeviceHardwareId?.Length ?? 0) > 512 || 
+                        (rule.DeviceName?.Length ?? 0) > 512 || 
+                        (rule.FromKeyName?.Length ?? 0) > 64 ||
+                        (rule.ToKeyName?.Length ?? 0) > 64)
+                    {
+                        throw new InvalidDataException("Invalid data found in remap rules.");
+                    }
+                }
+
+                foreach (var kb in imported.DisabledKeyboards)
+                {
+                    if (kb is null || 
+                        (kb.DeviceId?.Length ?? 0) > 512 || 
+                        (kb.HardwareId?.Length ?? 0) > 512 || 
+                        (kb.DeviceName?.Length ?? 0) > 512)
+                    {
+                        throw new InvalidDataException("Invalid data found in disabled keyboards.");
+                    }
+                }
+
+                // Safe to save
+                _settingsService.Save(imported);
+                _settings = imported;
                 
                 // Refresh UI checkboxes
                 StartWithWindowsCheck.IsChecked = _settings.StartWithWindows;
@@ -968,6 +1042,7 @@ public partial class MainWindow : Window
                 // Reload lists
                 _rules.Clear();
                 _disabledKeyboards.Clear();
+                _remapRules.Clear();
                 _keyOptions.Clear();
 
                 foreach (var rule in _settings.Rules)
@@ -975,6 +1050,13 @@ public partial class MainWindow : Window
                     EnsureRuleCompatibility(rule);
                     _rules.Add(rule);
                     AddKeyOptionIfMissing(new KeyOption(rule.KeyName, rule.VirtualKey, rule.ScanCode, rule.IsExtendedKey));
+                }
+
+                foreach (var rule in _settings.RemapRules)
+                {
+                    _remapRules.Add(rule);
+                    AddKeyOptionIfMissing(new KeyOption(rule.FromKeyName, 0, rule.FromScanCode, rule.FromIsExtendedKey));
+                    AddKeyOptionIfMissing(new KeyOption(rule.ToKeyName, 0, rule.ToScanCode, rule.ToIsExtendedKey));
                 }
 
                 foreach (var kb in _settings.DisabledKeyboards)
@@ -1155,11 +1237,13 @@ public partial class MainWindow : Window
             return path1;
         }
 
+#if DEBUG
         var path2 = Path.GetFullPath(Path.Combine(baseDir, "..", "..", "..", "..", "interception", "Interception", "command line installer", "install-interception.exe"));
         if (File.Exists(path2))
         {
             return path2;
         }
+#endif
 
         var path3 = Path.Combine(baseDir, "install-interception.exe");
         if (File.Exists(path3))

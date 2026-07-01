@@ -70,8 +70,14 @@ public sealed class TrayIconService : IDisposable
 
     private void ExitApplication()
     {
-        Dispose();
-        System.Windows.Application.Current.Shutdown();
+        if (_window is MainWindow mainWin)
+        {
+            mainWin.CloseFromTray();
+        }
+        else
+        {
+            _window.Close();
+        }
     }
 
     public void Dispose()

@@ -19,7 +19,7 @@ namespace KeyDisabler.App;
 
 public partial class MainWindow
 {
-    private readonly Dictionary<string, WpfButton> _keyboardTesterButtons = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, List<WpfButton>> _keyboardTesterButtons = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, string> _keyboardTesterStates = new(StringComparer.OrdinalIgnoreCase);
 
     private WpfComboBox? _testerKeyboardCombo;
@@ -134,9 +134,12 @@ public partial class MainWindow
     {
         _keyboardTesterStates.Clear();
 
-        foreach (var button in _keyboardTesterButtons.Values)
+        foreach (var buttonList in _keyboardTesterButtons.Values)
         {
-            ApplyTesterButtonState(button, "Normal");
+            foreach (var button in buttonList)
+            {
+                ApplyTesterButtonState(button, "Normal");
+            }
         }
 
         if (_testerLastKeyText is not null)
@@ -210,16 +213,22 @@ public partial class MainWindow
                 ? "Remapped"
                 : "Tested";
 
-        if (_keyboardTesterButtons.TryGetValue(keyId, out var button))
+        if (_keyboardTesterButtons.TryGetValue(keyId, out var buttons))
         {
-            ApplyTesterButtonState(button, "Pressed");
+            foreach (var button in buttons)
+            {
+                ApplyTesterButtonState(button, "Pressed");
+            }
 
             var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(180) };
             timer.Tick += (_, _) =>
             {
                 timer.Stop();
                 _keyboardTesterStates[keyId] = finalState;
-                ApplyTesterButtonState(button, finalState);
+                foreach (var button in buttons)
+                {
+                    ApplyTesterButtonState(button, finalState);
+                }
                 UpdateTesterCountText();
             };
             timer.Start();
@@ -503,8 +512,18 @@ public partial class MainWindow
 
     private void RegisterTesterButton(TesterKeyDefinition key, WpfButton button)
     {
-        var keyId = BuildTesterKeyId(key.ScanCode, key.IsExtendedKey);
-        _keyboardTesterButtons[keyId] = button;
+        RegisterTesterButton(key.ScanCode, key.IsExtendedKey, button);
+    }
+
+    private void RegisterTesterButton(ushort scanCode, bool isExtendedKey, WpfButton button)
+    {
+        var keyId = BuildTesterKeyId(scanCode, isExtendedKey);
+        if (!_keyboardTesterButtons.TryGetValue(keyId, out var list))
+        {
+            list = new List<WpfButton>();
+            _keyboardTesterButtons[keyId] = list;
+        }
+        list.Add(button);
         _keyboardTesterStates[keyId] = "Normal";
     }
 

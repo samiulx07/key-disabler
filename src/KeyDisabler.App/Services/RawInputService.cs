@@ -83,7 +83,7 @@ public sealed class RawInputService
             }
 
             var displayName = BuildRawInputDisplayName(i + 1, devicePath);
-            var id = $"rawinput:{normalizedPath.GetHashCode():X8}";
+            var id = $"rawinput:{GetDeterministicHashCode(normalizedPath):X8}";
 
             devices.Add(new AppKeyboardDevice
             {
@@ -99,7 +99,7 @@ public sealed class RawInputService
 
     public void ProcessMessage(IntPtr message, IntPtr lParam)
     {
-        if (message.ToInt32() != WM_INPUT)
+        if (message != (IntPtr)WM_INPUT)
         {
             return;
         }
@@ -271,5 +271,18 @@ public sealed class RawInputService
     {
         public IntPtr hDevice;
         public uint dwType;
+    }
+
+    private static uint GetDeterministicHashCode(string str)
+    {
+        unchecked
+        {
+            uint hash = 2166136261;
+            foreach (char c in str)
+            {
+                hash = (hash ^ c) * 16777619;
+            }
+            return hash;
+        }
     }
 }
