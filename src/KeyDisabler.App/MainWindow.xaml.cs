@@ -1081,7 +1081,7 @@ public partial class MainWindow : Window
                 var currentVersion = updateService.CurrentVersion;
                 UpdateStatus(currentVersion is not null
                     ? $"You're up to date (version {currentVersion})."
-                    : "No updates found.");
+                    : "Update check not supported in portable/debug builds.");
             }
         }
         catch (Exception ex)

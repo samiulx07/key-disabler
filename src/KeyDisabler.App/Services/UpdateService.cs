@@ -7,7 +7,7 @@ namespace KeyDisabler.App.Services;
 
 public sealed class UpdateService
 {
-    private const string GitHubRepoUrl = "https://github.com/samiulx07/key-disabler";
+    private const string GitHubRepoUrl = "https://github.com/SamiulxHasanx07/key-disabler";
     private readonly UpdateManager _updateManager;
     private UpdateInfo? _cachedUpdate;
 
