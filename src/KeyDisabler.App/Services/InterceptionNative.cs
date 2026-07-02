@@ -1,3 +1,5 @@
+using System.IO;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -11,6 +13,46 @@ internal static class InterceptionNative
     public const ushort KeyStateUp = 0x01;
     public const ushort KeyStateE0 = 0x02;
     public const ushort KeyStateE1 = 0x04;
+
+    static InterceptionNative()
+    {
+        NativeLibrary.SetDllImportResolver(typeof(InterceptionNative).Assembly, ResolveNativeLibrary);
+    }
+
+    private static IntPtr ResolveNativeLibrary(string libraryName, Assembly assembly, DllImportSearchPath? searchPath)
+    {
+        if (!string.Equals(libraryName, "interception.dll", StringComparison.OrdinalIgnoreCase) &&
+            !string.Equals(libraryName, "interception", StringComparison.OrdinalIgnoreCase))
+        {
+            return IntPtr.Zero;
+        }
+
+        foreach (var candidate in GetInterceptionDllCandidates())
+        {
+            if (File.Exists(candidate) && NativeLibrary.TryLoad(candidate, out var handle))
+            {
+                return handle;
+            }
+        }
+
+        return IntPtr.Zero;
+    }
+
+    private static IEnumerable<string> GetInterceptionDllCandidates()
+    {
+        var baseDirectory = AppContext.BaseDirectory;
+
+        yield return Path.Combine(baseDirectory, "interception.dll");
+        yield return Path.Combine(baseDirectory, "driver", "interception.dll");
+
+        var processDirectory = Path.GetDirectoryName(Environment.ProcessPath);
+        if (!string.IsNullOrWhiteSpace(processDirectory) &&
+            !string.Equals(processDirectory, baseDirectory, StringComparison.OrdinalIgnoreCase))
+        {
+            yield return Path.Combine(processDirectory, "interception.dll");
+            yield return Path.Combine(processDirectory, "driver", "interception.dll");
+        }
+    }
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     public delegate int InterceptionPredicate(int device);
