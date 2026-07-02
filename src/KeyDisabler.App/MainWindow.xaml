@@ -392,7 +392,7 @@
                 </Border>
             </TabItem>
 
-            <TabItem Header="Dev Options">
+            <TabItem Header="About">
                 <Border Background="{DynamicResource CardBackground}" CornerRadius="18" Padding="26" Margin="0,12,0,0">
                     <StackPanel>
                         <Border Background="{DynamicResource DevOptionsBackground}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="18" Padding="20" Margin="0,0,0,18">
@@ -424,16 +424,24 @@
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
 
-                            <TextBlock Grid.Row="0" Grid.Column="0" Text="GitHub" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,10" />
-                            <TextBox Grid.Row="0" Grid.Column="1" Text="https://github.com/SamiulxHasanx07" IsReadOnly="True" BorderThickness="0" Background="{DynamicResource WindowBackground}" Padding="10,6" Margin="0,0,0,10" />
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Software Version" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,10" />
+                            <TextBox Grid.Row="0" Grid.Column="1" Text="v0.2.2" IsReadOnly="True" BorderThickness="0" Background="{DynamicResource WindowBackground}" Padding="10,6" Margin="0,0,0,10" />
 
-                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Email" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,10" />
-                            <TextBox Grid.Row="1" Grid.Column="1" Text="samiulxhasan650@gmail.com" IsReadOnly="True" BorderThickness="0" Background="{DynamicResource WindowBackground}" Padding="10,6" Margin="0,0,0,10" />
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="GitHub" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,10" />
+                            <TextBox Grid.Row="1" Grid.Column="1" Text="https://github.com/samiulx07" IsReadOnly="True" BorderThickness="0" Background="{DynamicResource WindowBackground}" Padding="10,6" Margin="0,0,0,10" />
 
-                            <TextBlock Grid.Row="2" Grid.Column="0" Text="Phone" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" />
-                            <TextBox Grid.Row="2" Grid.Column="1" Text="+8801788058690" IsReadOnly="True" BorderThickness="0" Background="{DynamicResource WindowBackground}" Padding="10,6" />
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="Email" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,10" />
+                            <TextBox Grid.Row="2" Grid.Column="1" Text="samiulxhasan650@gmail.com" IsReadOnly="True" BorderThickness="0" Background="{DynamicResource WindowBackground}" Padding="10,6" Margin="0,0,0,10" />
+
+                            <TextBlock Grid.Row="3" Grid.Column="0" Text="Phone" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" Margin="0,0,0,10" />
+                            <TextBox Grid.Row="3" Grid.Column="1" Text="+8801788058690" IsReadOnly="True" BorderThickness="0" Background="{DynamicResource WindowBackground}" Padding="10,6" Margin="0,0,0,10" />
+
+                            <TextBlock Grid.Row="4" Grid.Column="0" Text="Website" FontWeight="SemiBold" Foreground="{DynamicResource TextSecondary}" />
+                            <TextBox Grid.Row="4" Grid.Column="1" Text="https://key-disabler.vercel.app/" IsReadOnly="True" BorderThickness="0" Background="{DynamicResource WindowBackground}" Padding="10,6" />
                         </Grid>
                     </StackPanel>
                 </Border>
